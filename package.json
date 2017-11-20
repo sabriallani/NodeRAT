@@ -1,0 +1,42 @@
+{
+  "name": "noderat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "webpack": "webpack",
+    "start": "npm run webpack",
+    "app": "./node_modules/.bin/electron ."
+  },
+  "author": "karam karim",
+  "license": "MIT",
+  "url": "https://github.com/node-rat/NodeRAT",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-1": "^6.24.1",
+    "concurrently": "^3.5.0",
+    "electron": "^1.7.8",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "webpack": "^3.6.0"
+  },
+  "dependencies": {
+    "auto-launch": "^5.0.1",
+    "axios": "^0.17.0",
+    "flux": "^3.1.3",
+    "jquery": "^3.2.1",
+    "material-ui": "^0.19.4",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2",
+    "request-promise-native": "^1.0.5"
+  },
+  "os": [
+    "!darwin",
+    "!linux"
+  ]
+}
