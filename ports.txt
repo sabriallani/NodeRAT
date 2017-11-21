@@ -1,0 +1,7 @@
+
+--PORT-------COMMAND------
+|                        |
+| 1528 : sending command |
+| 1529 : sending video   |
+| 1230 : sending picture |
+--------------------------
