@@ -3,7 +3,7 @@
 module.exports = new class deviceinfo{
     get(){
         const os = require("os");
-        const formatBytes = require("./formatBytes");
+        const formatBytes = require("./formatbytes");
 
         let OS = os.type(),
             Arch = os.arch(),
@@ -18,8 +18,8 @@ module.exports = new class deviceinfo{
                     publicAPIdata: {},
                     error : false
                 },
-                wifi: (_net["Wi-Fi"] != undefined) ? _net["Wi-Fi"] : null,
-                eth0: (_net["eth0"] != undefined) ? _net["eth0"] : null,
+                wifi: (_net["Wi-Fi"] != undefined) ? _net["Wi-Fi"] : _net[Object.keys(_net)[1]],
+                eth0: (_net["eth0"] != undefined) ? _net["eth0"] : _net[Object.keys(_net)[0]],
                 local:{
                     connected : null,
                     gateway : null

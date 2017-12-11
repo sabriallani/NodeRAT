@@ -2,7 +2,7 @@ const os = require("os");
 const electron = require("electron");
 window.remote = electron.remote;
 
-const device = remote.require("./src/modules/deviceInfo");
+let device = remote.require("./src/modules/deviceInfo");
 
 
 const shell = electron.shell;
@@ -14,6 +14,8 @@ window.openLink = (link) => {
 }
 
 window.ipcRenderer = electron.ipcRenderer;
+
+console.log(device.get());
 
 window.Renderer = {
     data: {

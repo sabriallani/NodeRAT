@@ -16,36 +16,36 @@ let nodeRat = null,
 class NodeRAT{
     constructor(){
         Server.start();
-        // this.Windows = {};
-        // this.SetStoreVars();
-        // this.src = {
-        //     icon:{
-        //         256:"./src/static/images/rat-face-256.ico",
-        //         64: "./src/static/images/rat-face-64.ico",
-        //         32: "./src/static/images/rat-face-32.ico",
-        //         red : {
-        //             64: "./src/static/images/rat-face-red-64.ico",
-        //             32: "./src/static/images/rat-face-red-32.ico"
-        //         }
-        //     },
-        //     png:{
-        //         full:"./src/static/images/icon.png",
-        //         64:  "./src/static/images/icon-64.png",
-        //         32:  "./src/static/images/icon-32.png"
-        //     },
-        //     svg:{
-        //         rat: "./src/static/images/poly-rat-face.svg",
-        //         ratRed: "./src/static/images/poly-rat-face-red.svg",
-        //         icon: "./src/static/images/icon.svg",
-        //     }
-        // }
-        // this.NodeRatAutoStart = new autoLaunch({ name: 'NodeRat' });
-        // this._ipcModule = null;
-        // this.init()
-        //     .then(() => this.StartIpcListeners())
-        //     .catch(() => console.log);
-        // this.createTray();
-        // this.startUpStatus();
+        this.Windows = {};
+        this.SetStoreVars();
+        this.src = {
+            icon:{
+                256:"./src/static/images/rat-face-256.ico",
+                64: "./src/static/images/rat-face-64.ico",
+                32: "./src/static/images/rat-face-32.ico",
+                red : {
+                    64: "./src/static/images/rat-face-red-64.ico",
+                    32: "./src/static/images/rat-face-red-32.ico"
+                }
+            },
+            png:{
+                full:"./src/static/images/icon.png",
+                64:  "./src/static/images/icon-64.png",
+                32:  "./src/static/images/icon-32.png"
+            },
+            svg:{
+                rat: "./src/static/images/poly-rat-face.svg",
+                ratRed: "./src/static/images/poly-rat-face-red.svg",
+                icon: "./src/static/images/icon.svg",
+            }
+        }
+        this.NodeRatAutoStart = new autoLaunch({ name: 'NodeRat' });
+        this._ipcModule = null;
+        this.init()
+            .then(() => this.StartIpcListeners())
+            .catch(() => console.log);
+        this.createTray();
+        this.startUpStatus();
     }
 
     init(){
@@ -314,10 +314,3 @@ app.on("quit", (e) =>{
 
 
 //TODO : add before close action to stop the server and do some clean up
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        nodeRat = null;
-        app.quit();
-    }
-})

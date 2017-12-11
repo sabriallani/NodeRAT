@@ -51,16 +51,29 @@ export default class PcInfo extends React.Component{
             toReturn.local.connected = network.local.connected;
             
            if(network.wifi){
-               if (network.wifi.length == 2){
+               let i = 0;
+               network.wifi.forEach(element => {
+                   if (element.family != "IPv4")
+                       i++;
+               });
 
-                    toReturn.local.v4.ip = network.wifi[1].address;
-                    toReturn.local.v4.mac = network.wifi[1].mac;
+               toReturn.local.v4.ip = network.wifi[i].address;
+               toReturn.local.v4.mac = network.wifi[i].mac;
+            //    if (network.wifi.length == 2){
+            //         let i = 0;
+            //         network.wifi.forEach(element => {
+            //             if(element.family != "IPv4")
+            //                 i++;
+            //         });
 
-               } else if (network.wifi.length == 1){
+            //         toReturn.local.v4.ip = network.wifi[i].address;
+            //         toReturn.local.v4.mac = network.wifi[i].mac;
 
-                    toReturn.local.v4.ip = network.wifi[0].address;
-                    toReturn.local.v4.mac = network.wifi[0].mac;
-                }
+            //    } else if (network.wifi.length == 1){
+
+            //         toReturn.local.v4.ip = network.wifi[0].address;
+            //         toReturn.local.v4.mac = network.wifi[0].mac;
+            //     }
            } else if (network.eth0){
                // not connected to wifi
                if (network.eth0.length == 2) {
@@ -96,7 +109,7 @@ export default class PcInfo extends React.Component{
             <div className="details tbl">
                <div className="row">
                     <p className="tooltip tooltip-right" data-tooltip="Operating System">
-                        <i className="fa fa-lg fa-desktop"></i> {this.state.OS.FullNameVersion}
+                        <i className="fa fa-lg fa-desktop"></i> {this.state.OS.OS}
                     </p>
                     <p className="tooltip tooltip-right" data-tooltip="logged in User(Computer Name)">
                         <i className="fa fa-lg fa-user-circle"></i> {this.state.OS.User.username}({this.state.OS.User.computerName})
