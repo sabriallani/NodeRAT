@@ -17,7 +17,6 @@ export default class PcInfo extends React.Component{
         this.setState({
             OS: pcinfoStore.getAll()
         });
-        console.log(pcinfoStore.getAll());
     }
 
 
@@ -51,29 +50,8 @@ export default class PcInfo extends React.Component{
             toReturn.local.connected = network.local.connected;
             
            if(network.wifi){
-               let i = 0;
-               network.wifi.forEach(element => {
-                   if (element.family != "IPv4")
-                       i++;
-               });
-
-               toReturn.local.v4.ip = network.wifi[i].address;
-               toReturn.local.v4.mac = network.wifi[i].mac;
-            //    if (network.wifi.length == 2){
-            //         let i = 0;
-            //         network.wifi.forEach(element => {
-            //             if(element.family != "IPv4")
-            //                 i++;
-            //         });
-
-            //         toReturn.local.v4.ip = network.wifi[i].address;
-            //         toReturn.local.v4.mac = network.wifi[i].mac;
-
-            //    } else if (network.wifi.length == 1){
-
-            //         toReturn.local.v4.ip = network.wifi[0].address;
-            //         toReturn.local.v4.mac = network.wifi[0].mac;
-            //     }
+               toReturn.local.v4.ip = network.wifi[0].address;
+               toReturn.local.v4.mac = network.wifi[0].mac;
            } else if (network.eth0){
                // not connected to wifi
                if (network.eth0.length == 2) {
@@ -95,6 +73,7 @@ export default class PcInfo extends React.Component{
                toReturn.public.country = "Earth";
            }
         }
+        console.log(toReturn);
         return toReturn;
     }
 

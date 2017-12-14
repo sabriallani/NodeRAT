@@ -9,13 +9,15 @@ export default new class pcinfoAction{
         
         window.addEventListener("online", () =>{
             Renderer.data.deviceInfo.Network.local.connected = navigator.onLine;
-            this.getPublicIp();
+            setTimeout(() => this.getPublicIp(), 1000); // name resolution error without this timeout
             this.updateData(Renderer.data.deviceInfo);
+            console.log("Network Info-pcInfoAction > online");
         });
 
         window.addEventListener("offline", () =>{
             Renderer.data.deviceInfo.Network.local.connected = navigator.onLine;
             this.updateData(Renderer.data.deviceInfo);
+            console.log("Network Info-pcInfoAction > offline");
         });
 
     }

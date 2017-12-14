@@ -32,8 +32,10 @@ module.exports =  class ipcListeners{
 
         // @actionName => event name to listen to: string
         ipcMain.on("core-store-on", (event, actionName) => {
+            console.log("core-store-on: listen", actionName);
             coreStore.on(actionName, () =>{
                 let name = actionName.split("@")[0];
+                console.log("core-store-on: fire", actionName, name);
                 event.sender.send(`core-store-on-${actionName}`, coreStore.getVar(name));
             });
         });

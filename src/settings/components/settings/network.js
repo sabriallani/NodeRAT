@@ -17,6 +17,10 @@ export default class Network extends React.Component {
                 open: false,
                 message: undefined
             },
+            ServerRestartMsg: {
+                msg : "",
+                show: false
+            },
             PortTextField : {
                 errorMsg : "",
                 value: 1528,
@@ -40,17 +44,40 @@ export default class Network extends React.Component {
             local : () => {
                 let l = null,
                     p = PcInfoStore.getAll().Network;
-                 p.wifi ? l = p.wifi : l = p.eth0;
-                l.length == 2 ? l = l[1] : l = l[0];
-                return l.address || "unknown";
+                    l = p.wifi ? p.wifi : p.eth0;
+                    for(let ob of l){
+                        if(ob.family == "IPv4"){
+                            l = ob.address;
+                            break;
+                        }else{
+                            l = ob.address;
+                        }
+                    }
+                return l || "unknown";
             },
             selectField : {
                 value: () => this.state.public ? this.state.public : this.state.local()
             }
         }
-
-        // subscribe to this event
+        this.handleDialogCloseCallbacks = [];
+        // subscribe to this event 
+        // PS: don't know why this is here !!!!
         ipcRenderer.send("core-store-on", "RATMainTCPPort@UPDATED"); 
+
+        ipcRenderer.send("core-store-l", "getVar", ["RATMainTCPPort"], "RATMainTCPPort@intialValue"); 
+
+        ipcRenderer.on("core-store-r#RATMainTCPPort@intialValue", (event, port) => {
+            console.log("ev:", port);
+            let PortTextField = this.state.PortTextField;
+            PortTextField.value = port;
+            let SetPortTextField = this.state.SetPortTextField;
+            SetPortTextField.value = port;
+            this.setState({
+                PortTextField,
+                SetPortTextField
+            });
+        }); 
+
         PcInfoStore.on("PUBLIC_IP_UPDATED", (payload) => {
                 this.setState({ public: payload.ip });
         });
@@ -65,6 +92,7 @@ export default class Network extends React.Component {
                 SetPortTextField: SetPortTextFieldState
             });
         });
+
 
         this.style = {
             paper: {
@@ -108,7 +136,24 @@ export default class Network extends React.Component {
                 textAlign : "center"
             }
         }
+
+        this.handleDialogCloseCallbacks.push(() => {
+            ipcRenderer.send("core-store-l", "customEvent", ["RestartApplication"]);
+        });
+
+        ipcRenderer.on("core-store-on-ApplicationNeedsRestart", () => {
+            let msg = `NodeRat needs to restart in order to change take effect.`
+            this.setState({
+                dialog: {
+                    open: true,
+                    message: msg,
+                }
+            });
+        });
+        
+        ipcRenderer.send("core-store-on", "ApplicationNeedsRestart"); 
     }
+
 
     handleDialogClose() {
         this.setState({
@@ -117,6 +162,8 @@ export default class Network extends React.Component {
                 message: null,
             }
         });
+        this.handleDialogCloseCallbacks.forEach((cl) => cl());
+        this.handleDialogCloseCallbacks = [];
     }
 
     checkPortIsOpen(e){
@@ -166,9 +213,6 @@ export default class Network extends React.Component {
         }
     }
 
-    componentDidMount() {
-       
-    }
 
     checkPortValue(e, newVal){
         let newState = this.state.PortTextField;
@@ -177,14 +221,12 @@ export default class Network extends React.Component {
         if(newVal != "")
             newVal = parseInt(newVal, 10);
         if (newVal < 1024 || newVal > 65535){
-            // newState.value = newVal == null || isNaN(newVal) ?  newState.defaultValue : newVal;
             newState.value = newVal;
             newState.errorMsg = "Unvalid Port";
             newState.valid = false;
             CheckPort.showButton = true;
             this.setState({PortTextField : newState});
         }else{
-            // newState.value = newVal == null  || isNaN(newVal) ? newState.defaultValue : newVal;
             newState.value = newVal;
             newState.errorMsg = "";
             newState.valid = true;

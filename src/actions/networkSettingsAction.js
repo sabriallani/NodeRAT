@@ -24,6 +24,3 @@ module.exports = new class networkSettingsAction {
     }
 
 }
- 
-
-//  networkSettingsAction;

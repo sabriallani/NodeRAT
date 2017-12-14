@@ -37,6 +37,11 @@ class NodeCoreStore extends EventEmitter{
         }
     }
 
+    customEvent(eventName, msg){
+        this.emit(eventName, msg);
+        console.log("event" ,eventName);
+    }
+
     handleAction(action){
         switch(action.type){
             case "UPDATE":

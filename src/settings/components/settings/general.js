@@ -96,7 +96,7 @@ export default class General extends React.Component{
         ]
         return(
             <div className="settings container">
-                <Paper style={this.style.paper} zDepth={4}>
+                {/* <Paper style={this.style.paper} zDepth={4}>
                     <Toggle
                         label="Run NodeRAT on Startup"
                         defaultToggled={false}
@@ -105,7 +105,8 @@ export default class General extends React.Component{
                     />
                 </Paper>
 
-                <Divider />
+                <Divider /> */}
+                {/*TODO: available in future it's not working correctly for now */}
 
                 <Paper style={this.style.paper} zDepth={4}>
                     <div>

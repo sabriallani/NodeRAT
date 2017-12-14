@@ -6,69 +6,62 @@ const autoLaunch = require("auto-launch");
 const CoreAction = require("./src/actions/nodeCoreAction");
 const CoreStore = require("./src/stores/nodeCoreStore");
 const Server = require("./server/index");
+const Settings = require("./server/settings");
 
 let nodeRat = null,
     startTime = new Date,
     endTime = 0;
-
     startTime = startTime.getTime();
 
 class NodeRAT{
     constructor(){
-        Server.start();
         this.Windows = {};
-        this.SetStoreVars();
         this.src = {
-            icon:{
-                256:"./src/static/images/rat-face-256.ico",
+            icon: {
+                256: "./src/static/images/rat-face-256.ico",
                 64: "./src/static/images/rat-face-64.ico",
                 32: "./src/static/images/rat-face-32.ico",
-                red : {
+                red: {
                     64: "./src/static/images/rat-face-red-64.ico",
                     32: "./src/static/images/rat-face-red-32.ico"
                 }
             },
-            png:{
-                full:"./src/static/images/icon.png",
-                64:  "./src/static/images/icon-64.png",
-                32:  "./src/static/images/icon-32.png"
+            png: {
+                full: "./src/static/images/icon.png",
+                64: "./src/static/images/icon-64.png",
+                32: "./src/static/images/icon-32.png"
             },
-            svg:{
+            svg: {
                 rat: "./src/static/images/poly-rat-face.svg",
                 ratRed: "./src/static/images/poly-rat-face-red.svg",
                 icon: "./src/static/images/icon.svg",
             }
         }
-        this.NodeRatAutoStart = new autoLaunch({ name: 'NodeRat' });
         this._ipcModule = null;
-        this.init()
-            .then(() => this.StartIpcListeners())
-            .catch(() => console.log);
-        this.createTray();
-        this.startUpStatus();
+        this.settings = null;
+        if(process.platform != "linux")
+            this.createTray();
+        this.createLoaderWindow();
+
+        Settings.autoSave(true);
+        Settings.onLoad((c) =>{ 
+            this.settings = c;
+            this.con();
+        });
     }
 
-    init(){
-        return new Promise((resolve,reject) => {
-            this.createLoaderWindow();
-            this.Windows.loaderWin.on("ready-to-show", () => {
-                this.Windows.loaderWin.show();
-                this.createMainWindow();
+    con(){
+        let port = this.settings["network.port.tcp.use"];
+        this.SetStoreVars();
+        Server.start({CoreAction, CoreStore, port});
+        Server.listenForPortUpdate();
+        this.createMainWindow();
+        this.startEventListeners();
+    }
 
-                this.Windows.mainWindow.on("ready-to-show", () => {
-                    resolve();
-                    this.timeout = setTimeout(() => {
-                        this.Windows.loaderWin.close();
-                        this.Windows.mainWindow.show();
-
-                        clearTimeout(this.timeout);
-                        this.timeout = null
-                        this.Windows.loaderWin = null;
-                        this.setMenuItems();
-                    }, 2000);
-                });
-            });
-
+    startEventListeners(){
+        CoreStore.on("RestartApplication", () => {
+            this.appRestart();
         });
     }
 
@@ -76,7 +69,7 @@ class NodeRAT{
         this.Windows.loaderWin = new BrowserWindow({
             width: 500,
             height: 300,
-            parent: this.Windows.mainWindow,
+            parent: this.Windows.mainWindow || null,
             resizable: false,
             movable: false,
             maximizable: false,
@@ -95,6 +88,9 @@ class NodeRAT{
             slashes: true
         }));
 
+        this.Windows.loaderWin.on("ready-to-show", () => {
+            this.Windows.loaderWin.show();
+        });
     }
 
     createMainWindow(){
@@ -121,6 +117,18 @@ class NodeRAT{
         // Open the DevTools.
         this.Windows.mainWindow.webContents.openDevTools();
 
+        this.Windows.mainWindow.on("ready-to-show", () => {
+            this.timeout = setTimeout(() => {
+                this.Windows.loaderWin.close();
+                this.Windows.mainWindow.show();
+
+                clearTimeout(this.timeout);
+                this.timeout = null
+                this.Windows.loaderWin = null;
+                this.setMenuItems();
+            }, 2000);
+        });
+        this.StartIpcListeners()
     }
 
     settingsWindow(menuitem, window, event) {
@@ -152,16 +160,18 @@ class NodeRAT{
     }
 
     createTray(){
-        this.tray = new Tray(this.src.icon["64"]);
+        this.tray = new Tray(this.src.png["64"]);
         this.tray.setToolTip("NodeRAT");
         this.tray.on("click", (e) => {
             console.log(e);
-            if (this.Windows.mainWindow.isMinimized())
-                this.Windows.mainWindow.restore();
-            if(!this.Windows.mainWindow.isVisible())
-                this.Windows.mainWindow.show();
-            if(!this.Windows.mainWindow.isFocused())
-                this.Windows.mainWindow.focus();
+            if(this.Windows.mainWindow){
+                if (this.Windows.mainWindow.isMinimized())
+                    this.Windows.mainWindow.restore();
+                if(!this.Windows.mainWindow.isVisible())
+                    this.Windows.mainWindow.show();
+                if(!this.Windows.mainWindow.isFocused())
+                    this.Windows.mainWindow.focus();
+            }
 
         });
     }
@@ -204,8 +214,12 @@ class NodeRAT{
     }
 
     SetStoreVars(){
+        let tcpPortDefault = this.settings["network.port.tcp.default"],
+            tcpPortUse     = this.settings["network.port.tcp.use"],
+            port = tcpPortDefault == tcpPortUse ? tcpPortDefault : tcpPortUse; // check if port has changed or not;
+        console.log("port:", port , tcpPortDefault, tcpPortUse);
         CoreAction.setVar("appStartup", null);
-        CoreAction.setVar("RATMainTCPPort", 1528);
+        CoreAction.setVar("RATMainTCPPort", port);
     }
 
     windowReload(menuitem, window, event){
@@ -220,55 +234,6 @@ class NodeRAT{
         dialog.showMessageBox(null, option, (response) =>{
             if(response == 1)
                 this.Windows.mainWindow.reload();
-            });
-    }
-
-    startUpStatus(){
-        let NodeRatAutoStart = this.NodeRatAutoStart;
-        NodeRatAutoStart.isEnabled()
-            .then((isEnabled)  => {
-                CoreAction.updateVar("app_startup", isEnabled);
-            })
-            .catch((err) => { /*handle error*/ });
-
-            CoreStore.on("app_startup_UPDATED", () => {
-                if (CoreStore.getVar("app_startup") === true) {
-                    this.addToStartUp();
-                } else {
-                    this.removeFromStartUp();
-                }
-            });
-    }
-
-    addToStartUp(){
-        let NodeRatAutoStart = this.NodeRatAutoStart;
-
-
-        NodeRatAutoStart.isEnabled()
-            .then(function (isEnabled) {
-                if (!isEnabled) {
-                    CoreAction.updateVar("app_startup", true);
-                    NodeRatAutoStart.enable();
-                }
-            })
-            .catch(function (err) {
-                // handle error 
-            });
-    }
-
-    removeFromStartUp(){
-
-        let NodeRatAutoStart = this.NodeRatAutoStart;
-
-        NodeRatAutoStart.isEnabled()
-            .then(function (isEnabled) {
-                if (isEnabled) {
-                    NodeRatAutoStart.disable();
-                    CoreAction.updateVar("app_startup", false);
-                }
-            })
-            .catch(function (err) {
-                // handle error 
             });
     }
 

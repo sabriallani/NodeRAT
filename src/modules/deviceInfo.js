@@ -18,8 +18,8 @@ module.exports = new class deviceinfo{
                     publicAPIdata: {},
                     error : false
                 },
-                wifi: (_net["Wi-Fi"] != undefined) ? _net["Wi-Fi"] : _net[Object.keys(_net)[1]],
                 eth0: (_net["eth0"] != undefined) ? _net["eth0"] : _net[Object.keys(_net)[0]],
+                wifi: (_net["Wi-Fi"] != undefined) ? _net["Wi-Fi"] : _net[Object.keys(_net)[1]],
                 local:{
                     connected : null,
                     gateway : null

@@ -1,3 +1,4 @@
-const os = require("os");
+const s = require("./server/settings");
 
-console.log(os.networkInterfaces());
+console.log(
+);

@@ -15,8 +15,6 @@ window.openLink = (link) => {
 
 window.ipcRenderer = electron.ipcRenderer;
 
-console.log(device.get());
-
 window.Renderer = {
     data: {
         deviceInfo : device.get(),
