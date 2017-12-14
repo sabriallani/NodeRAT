@@ -1,0 +1,4 @@
+-make the settings window nav tab fixed when scrolling
+
+-fix[server/settings@set] properly save objects to config.json
+
