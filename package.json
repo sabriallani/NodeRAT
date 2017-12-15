@@ -1,6 +1,7 @@
 {
   "name": "noderat",
   "version": "1.0.0",
+  "productName": "NodeRat",
   "description": "",
   "main": "index.js",
   "scripts": {

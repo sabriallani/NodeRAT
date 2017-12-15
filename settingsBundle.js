@@ -44420,8 +44420,7 @@ var Index = function (_React$Component) {
                     _Tabs.Tabs,
                     { onChange: this.handleTabSlide.bind(this), value: this.state.tabs.slideIndex },
                     _react2.default.createElement(_Tabs.Tab, { label: "General", icon: _react2.default.createElement(_FontIcon2.default, { className: "fa fa-cogs" }), value: 0 }),
-                    _react2.default.createElement(_Tabs.Tab, { label: "Network", icon: _react2.default.createElement(_FontIcon2.default, { className: "fa fa-rss" }), value: 1 }),
-                    _react2.default.createElement(_Tabs.Tab, { label: "Server", icon: _react2.default.createElement(_FontIcon2.default, { className: "fa fa-server" }), value: 2 })
+                    _react2.default.createElement(_Tabs.Tab, { label: "Network", icon: _react2.default.createElement(_FontIcon2.default, { className: "fa fa-rss" }), value: 1 })
                 ),
                 _react2.default.createElement(
                     _reactSwipeableViews2.default,
@@ -44435,11 +44434,6 @@ var Index = function (_React$Component) {
                         "div",
                         { style: this.styles.slide },
                         _react2.default.createElement(_network2.default, null)
-                    ),
-                    _react2.default.createElement(
-                        "div",
-                        { style: this.styles.slide },
-                        _react2.default.createElement(_rat2.default, null)
                     )
                 )
             );

@@ -102,7 +102,7 @@ class NodeRAT{
             title: "NodeRAT",
             center: true,
             fullscreenable: true,
-            icon: this.src.icon["64"],
+            icon: this.src.png.full,
             backgroundColor: "#222222",
             show: false
         });
@@ -163,7 +163,6 @@ class NodeRAT{
         this.tray = new Tray(this.src.png["64"]);
         this.tray.setToolTip("NodeRAT");
         this.tray.on("click", (e) => {
-            console.log(e);
             if(this.Windows.mainWindow){
                 if (this.Windows.mainWindow.isMinimized())
                     this.Windows.mainWindow.restore();
@@ -217,7 +216,6 @@ class NodeRAT{
         let tcpPortDefault = this.settings["network.port.tcp.default"],
             tcpPortUse     = this.settings["network.port.tcp.use"],
             port = tcpPortDefault == tcpPortUse ? tcpPortDefault : tcpPortUse; // check if port has changed or not;
-        console.log("port:", port , tcpPortDefault, tcpPortUse);
         CoreAction.setVar("appStartup", null);
         CoreAction.setVar("RATMainTCPPort", port);
     }

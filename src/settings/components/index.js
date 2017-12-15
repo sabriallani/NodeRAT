@@ -37,7 +37,7 @@ export default class Index extends React.Component{
                 <Tabs onChange={this.handleTabSlide.bind(this)} value={this.state.tabs.slideIndex}>
                     <Tab label="General" icon={<FontIcon className="fa fa-cogs"/>} value={0} />
                     <Tab label="Network" icon={<FontIcon className="fa fa-rss" />} value={1} />
-                    <Tab label="Server" icon={<FontIcon className="fa fa-server" />} value={2} />
+                    {/* <Tab label="Server" icon={<FontIcon className="fa fa-server" />} value={2} /> */}
                 </Tabs>
                 <SwipeableViews index={this.state.tabs.slideIndex} onChangeIndex={this.handleTabSlide.bind(this)}>
                     <div style={this.styles.slide}>
@@ -46,9 +46,9 @@ export default class Index extends React.Component{
                     <div style={this.styles.slide}>
                         <Network />
                     </div>
-                    <div style={this.styles.slide}>
+                    {/* <div style={this.styles.slide}>
                         <Rat />
-                    </div>
+                    </div> */}
                 </SwipeableViews>
             </div>
         );
