@@ -8,6 +8,7 @@ const CoreStore = require("./src/stores/nodeCoreStore");
 const Server = require("./server/index");
 const Settings = require("./server/settings");
 
+
 let nodeRat = null,
     startTime = new Date,
     endTime = 0;
@@ -236,7 +237,12 @@ class NodeRAT{
     }
 
     StartIpcListeners(){
-       this._ipcModule = new ipcModule({}, CoreStore, CoreAction, this.Windows.mainWindow);
+        let {ServerStore, ServerAction, ServerConstants} = Server.export({
+            Constants : "ServerConstants",
+            Action    : "ServerAction",
+            Store     : "ServerStore"
+        });
+       this._ipcModule = new ipcModule({ServerStore, ServerAction, ServerConstants}, CoreStore, CoreAction, this.Windows.mainWindow);
     }
 
     setOnTop(menuItem, browserWindow, event){
@@ -267,13 +273,18 @@ app.on('ready', () => {
         nodeRat = new NodeRAT();
 });
 
-app.on("will-quit", (e) =>{
-    nodeRat.appWillQuit(e);
-});
+try {
+    app.on("will-quit", (e) =>{
+        nodeRat.appWillQuit(e);
+    });
+    
+    app.on("quit", (e) =>{
+        nodeRat.appQuit(e);
+    });
+} catch (error) {
+    console.log("error:", error);
+}
 
-app.on("quit", (e) =>{
-    nodeRat.appQuit(e);
-});
 
 
 //TODO : add before close action to stop the server and do some clean up

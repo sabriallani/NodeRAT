@@ -1,0 +1,22 @@
+const s = require("./server/settings");
+
+
+class test {
+    constructor(){
+	this.hello = "hello";
+    }
+
+
+    export(exports){
+        let toReturn = {};
+        for (let key in exports) {
+            if (exports.hasOwnProperty(key) && typeof this[key] != undefined || key != undefined) {
+                toReturn[exports[key]] = this[key] == undefined ? key : this[key];
+            }else{
+                throw new Error(`can not export unknown method(${key}) in Server ${this}`);
+                return;
+            }
+        }
+        return toReturn;
+    }
+}

@@ -37956,7 +37956,6 @@ var PcInfo = function (_React$Component) {
                     toReturn.public.country = "Earth";
                 }
             }
-            console.log(toReturn);
             return toReturn;
         }
     }, {
@@ -37995,7 +37994,7 @@ var PcInfo = function (_React$Component) {
                     _react2.default.createElement(
                         "p",
                         { className: "tooltip tooltip-right", "data-tooltip": "Random Access Memory" },
-                        _react2.default.createElement("i", { className: "fa fa-lg fa-hdd-o" }),
+                        _react2.default.createElement("i", { className: "fa fa-lg fa-microchip" }),
                         " ",
                         this.state.OS.Memory.total,
                         " total"
@@ -38014,7 +38013,7 @@ var PcInfo = function (_React$Component) {
                     _react2.default.createElement(
                         "p",
                         { className: network.local.connected ? "tooltip tooltip-right" : "tooltip tooltip-right error", "data-tooltip": network.local.connected ? "mac: " + network_tooltip_mac : "Local IP Address" },
-                        _react2.default.createElement("i", { className: "fa fa-lg fa-laptop" }),
+                        _react2.default.createElement("i", { className: "fa fa-lg fa-podcast" }),
                         network.local.connected ? _react2.default.createElement(
                             "span",
                             null,
@@ -38205,6 +38204,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(0);
@@ -38239,18 +38240,162 @@ var Body = function (_React$Component) {
             ContextMenu: {
                 options: {
                     1: [{ text: "hello", icon: "fav", action: _this.testing.bind(_this) }, { text: "2 hello", icon: "gear", action: _this.testing.bind(_this) }],
-                    2: [{ text: "numm 2", icon: "start", action: _this.testing2.bind(_this) }]
+                    2: [{ text: "numm 2", icon: "start", action: null }]
                 },
                 selected: null,
                 renderContext: false,
                 clientX: 0,
                 clientY: 0
-            }
+            },
+            ServerConstants: null,
+            ConnectedGuests: {}
         };
+
+        _this.getVictims();
         return _this;
     }
 
     _createClass(Body, [{
+        key: "getVictims",
+        value: function getVictims() {
+            var _this2 = this;
+
+            ipcRenderer.on("envVarResponse", function (e, serverConstant) {
+                var ServerConstants = _this2.state.ServerConstants;
+                ServerConstants = serverConstant;
+                // update state so we can use it in this.ServerStore bellow
+                _this2.setState({ ServerConstants: ServerConstants });
+                var cl = function cl(e, slaves) {
+                    console.log("slaves:", slaves, "Constants:", ServerConstants);
+                    var ConnectedGuests = _this2.state.ConnectedGuests;
+                    ConnectedGuests = slaves;
+                    _this2.setState({ ConnectedGuests: ConnectedGuests });
+                };
+                // intial data pull
+                _this2.ServerStore({
+                    method: "get",
+                    params: [_this2.state.ServerConstants.connectedVictims],
+                    id: "GetConnected",
+                    callback: cl
+                });
+                // data monitor 
+                _this2.ServerStore({
+                    on: true,
+                    name: { variable: _this2.state.ServerConstants.connectedVictims, status: "UPDATED" },
+                    id: "monitor",
+                    callback: cl
+                });
+                // Server Constants monitor
+                _this2.ServerStore({
+                    on: true,
+                    name: { variable: "Constants", status: "UPDATED" },
+                    id: "monitor",
+                    callback: function callback(e, con) {
+                        return _this2.setState({ ServerConstants: con });
+                    }
+                });
+            });
+            ipcRenderer.send("getEnvVars", "ServerConstants");
+        }
+    }, {
+        key: "ServerStore",
+        value: function ServerStore(_ref) {
+            var _ref$method = _ref.method,
+                method = _ref$method === undefined ? null : _ref$method,
+                _ref$params = _ref.params,
+                params = _ref$params === undefined ? [] : _ref$params,
+                _ref$on = _ref.on,
+                on = _ref$on === undefined ? null : _ref$on,
+                _ref$name = _ref.name,
+                name = _ref$name === undefined ? null : _ref$name,
+                _ref$callback = _ref.callback,
+                callback = _ref$callback === undefined ? null : _ref$callback,
+                _ref$id = _ref.id,
+                id = _ref$id === undefined ? null : _ref$id;
+
+            if (!callback) {
+                throw new Error("Callback needed for ServerStore");
+                return;
+            }
+
+            var listener = on;
+            if (on != null) if ((typeof on === "undefined" ? "undefined" : _typeof(on)) == "object") lisntener = on.hasOwnProperty("on") ? on.on : null;
+
+            if (listener == true && name) {
+                console.log("on event lisntener");
+                // event listener
+                var responseChannel = "ServerStoreResponse-on@" + name;
+                if (id) {
+                    if (typeof id == "string") {
+                        responseChannel = "ServerStore-on#" + id;
+                    } else if ((typeof id === "undefined" ? "undefined" : _typeof(id)) == "object" && id.full == true) {
+                        responseChannel = id.id;
+                    }
+                }
+                var cl = function cl(e, r) {
+                    callback(e, r);
+
+                    if (on.hasOwnProperty("once") && on.once == true) // one time listener
+                        ipcRenderer.removeListener(responseChannel, cl);
+                };
+                ipcRenderer.on(responseChannel, cl);
+                ipcRenderer.send("ServerStore-on", name, id);
+            } else if (method && params) {
+                // regular method call
+                console.log("one time event");
+                var _responseChannel = "ServerStoreResponse@" + method;
+                if (id) {
+                    if (typeof id == "string") {
+                        _responseChannel = "ServerStore#" + id;
+                    } else if ((typeof id === "undefined" ? "undefined" : _typeof(id)) == "object" && id.full == true) {
+                        _responseChannel = id.id;
+                    }
+                }
+                var _cl = function _cl(e, r) {
+                    callback(e, r);
+                    ipcRenderer.removeListener(_responseChannel, _cl);
+                };
+                ipcRenderer.on(_responseChannel, _cl);
+                ipcRenderer.send("ServerStore", method, params, id);
+            }
+        }
+    }, {
+        key: "ServerAction",
+        value: function ServerAction(_ref2) {
+            var _ref2$method = _ref2.method,
+                method = _ref2$method === undefined ? null : _ref2$method,
+                _ref2$params = _ref2.params,
+                params = _ref2$params === undefined ? [] : _ref2$params,
+                _ref2$id = _ref2.id,
+                id = _ref2$id === undefined ? null : _ref2$id,
+                _ref2$callback = _ref2.callback,
+                callback = _ref2$callback === undefined ? null : _ref2$callback;
+
+            if (method && params) {
+                if (!callback) {
+                    throw new Error("Callback needed for ServerAction");
+                    return;
+                }
+                var responseChannel = "ServerActionResponse@" + method;
+                if (id) {
+                    if (typeof id == "string") {
+                        responseChannel = "ServerAction#" + id;
+                    } else if ((typeof id === "undefined" ? "undefined" : _typeof(id)) == "object" && id.full == true) {
+                        responseChannel = id.id;
+                    }
+                }
+                var cl = function cl(e, rse) {
+                    callback(res, e);
+                    ipcRenderer.removeListener(responseChannel, cl);
+                };
+                ipcRenderer.on(responseChannel, cl);
+                ipcRenderer.send("ServerAction", method, params);
+            } else {
+                throw new Error("method name and parameter is expected in ServerAction");
+                return;
+            }
+        }
+    }, {
         key: "removeContext",
         value: function removeContext(e) {
             this.setState({
@@ -38288,36 +38433,37 @@ var Body = function (_React$Component) {
     }, {
         key: "testing",
         value: function testing(element) {
-            alert("clicked!");
-        }
-    }, {
-        key: "testing2",
-        value: function testing2(element) {
-            alert("2 clicked!");
+            alert("clicked");
         }
     }, {
         key: "render",
         value: function render() {
-            var _this2 = this;
+            var _this3 = this;
 
             var currentOption = this.currentOption();
+            console.log("Constants:", this.state.ServerConstants);
+            var viewVictims = function viewVictims() {
+                var re = [];
+                for (var ip in _this3.state.ConnectedGuests) {
+                    re.push(_react2.default.createElement(_vicBox2.default, { key: ip,
+                        ContextHandler: function ContextHandler(event) {
+                            return _this3.handleContext(event, 1);
+                        },
+                        Text: ip, Attributes: {}, info: _this3.state.ConnectedGuests[ip] }));
+                }
+                return re;
+            };
             return _react2.default.createElement(
                 "div",
                 { className: "body", onClick: this.removeContext.bind(this) },
                 this.state.ContextMenu.renderContext ? _react2.default.createElement(_contextmenu2.default, {
                     pos: { clientX: this.state.ContextMenu.clientX, clientY: this.state.ContextMenu.clientY },
                     srcElm: this.ContextElement, options: currentOption }) : null,
-                _react2.default.createElement(_vicBox2.default, {
-                    ContextHandler: function ContextHandler(event) {
-                        return _this2.handleContext(event, 1);
-                    },
-                    Text: "hello from world", Attributes: {} }),
-                _react2.default.createElement(_vicBox2.default, {
-
-                    ContextHandler: function ContextHandler(event) {
-                        return _this2.handleContext(event, 2);
-                    },
-                    Text: "hello from world 2", Attributes: {} })
+                Object.keys(this.state.ConnectedGuests).length > 0 ? viewVictims() : _react2.default.createElement(
+                    "h1",
+                    null,
+                    "No Guests "
+                )
             );
         }
     }]);
@@ -38499,7 +38645,7 @@ var vicBox = function (_React$Component) {
                 _react2.default.createElement(
                     "div",
                     this.setAttributes(),
-                    this.state.Text || ""
+                    this.state.Text + (" - status: " + this.props.info.status) || ""
                 ),
                 _react2.default.createElement("img", { src: "http://lorempixel.com/60/60/", className: "screen-preview" })
             );

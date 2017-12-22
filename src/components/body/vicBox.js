@@ -46,7 +46,7 @@ export default class vicBox extends React.Component{
         return(
             <div className="vic-box z-depth-5" onContextMenu={this.state.ContextHandler || null}>
                 <div {...this.setAttributes()}>
-                    {this.state.Text || ""}
+                    {this.state.Text + ` - status: ${this.props.info.status}` || ""}
                 </div>
                 <img src="http://lorempixel.com/60/60/" className="screen-preview" />
             </div >

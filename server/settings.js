@@ -29,7 +29,7 @@ class Settings {
 
     callCallbacks(){
         for(let callback of this.callbacks )
-            callback(this._config);
+            callback(this._config, this);
     }
 
     onLoad(callback){
@@ -38,7 +38,25 @@ class Settings {
     }
 
     get(obj = null){
-        return obj ? this._config[obj] : this._config;
+        if (typeof obj == "string") {
+
+            return obj ? this._config[obj] : this._config;
+        
+        } else if (typeof obj == "object" && obj instanceof Array){
+            let r = {};
+            for (const element of obj) {
+                if (this._config.hasOwnProperty(element)) {
+
+                    r[ element ] = this._config[element];
+
+                }else{
+
+                    r[ element ] = undefined;
+                    
+                }
+            }
+            return r;
+        }
     }
 
     set({obj = null, value = null}){

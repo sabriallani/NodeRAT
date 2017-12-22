@@ -73,7 +73,6 @@ export default class PcInfo extends React.Component{
                toReturn.public.country = "Earth";
            }
         }
-        console.log(toReturn);
         return toReturn;
     }
 
@@ -94,7 +93,7 @@ export default class PcInfo extends React.Component{
                         <i className="fa fa-lg fa-user-circle"></i> {this.state.OS.User.username}({this.state.OS.User.computerName})
                     </p>
                     <p className="tooltip tooltip-right" data-tooltip="Random Access Memory">
-                        <i className="fa fa-lg fa-hdd-o"></i> {this.state.OS.Memory.total} total
+                        <i className="fa fa-lg fa-microchip"></i> {this.state.OS.Memory.total} total
                     </p>
                </div>
                <div className="row">
@@ -102,7 +101,7 @@ export default class PcInfo extends React.Component{
                         <i className="fa fa-lg fa-globe"></i> {network.public.ip }
                    </p>
                    <p className={network.local.connected ? "tooltip tooltip-right" : "tooltip tooltip-right error"} data-tooltip={network.local.connected ? `mac: ${network_tooltip_mac}` : "Local IP Address"}>
-                        <i className="fa fa-lg fa-laptop"></i> 
+                        <i className="fa fa-lg fa-podcast"></i> 
                         { network.local.connected ? 
                             <span>{ network.local.v4.ip ? network.local.v4.ip : network.local.v6.ip }</span>
                             :

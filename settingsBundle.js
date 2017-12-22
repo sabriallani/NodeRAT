@@ -64042,8 +64042,9 @@ var Network = function (_React$Component) {
                     socket.destroy();
                 });
                 socket.on("data", function (data) {
+                    console.log("data", data);
                     var md5 = crypto.createHash("md5");
-                    md5.update("noderatistheboss");
+                    md5.update("noderat");
                     if (data == md5.digest("hex")) {
                         checkPortIsOpenState.open = true;
                         checkPortIsOpenState.icon = "fa fa-check-circle";
@@ -64052,12 +64053,19 @@ var Network = function (_React$Component) {
                         _this2.setState({ checkPortIsOpen: checkPortIsOpenState });
                     } else {
                         checkPortIsOpenState.open = false;
+                        checkPortIsOpenState.showLoader = false;
+                        checkPortIsOpenState.disableButton = false;
                         checkPortIsOpenState.icon = "fa fa-check-circle";
                         _this2.setState({ checkPortIsOpen: checkPortIsOpenState });
                     }
                 });
                 setTimeout(function () {
-                    socket.end();console.log('closing connection');
+                    socket.end();
+                    checkPortIsOpenState.open = false;
+                    checkPortIsOpenState.showLoader = false;
+                    checkPortIsOpenState.disableButton = false;
+                    _this2.setState({ checkPortIsOpen: checkPortIsOpenState });
+                    console.log('closing connection');
                 }, 60 * 1000);
             }
         }

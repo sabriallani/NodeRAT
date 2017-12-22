@@ -43,6 +43,7 @@ class NodeCoreStore extends EventEmitter{
     }
 
     handleAction(action){
+        console.log("nodeCoreStore: event", action);
         switch(action.type){
             case "UPDATE":
                 this.updateVar(action.payload[0], action.payload[1]);

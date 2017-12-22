@@ -195,8 +195,9 @@ export default class Network extends React.Component {
                 socket.destroy();
             });
             socket.on("data", (data) => {
+                console.log("data", data);
                 let md5 = crypto.createHash("md5");
-                md5.update("noderatistheboss");
+                md5.update("noderat");
                 if(data == md5.digest("hex")){
                     checkPortIsOpenState.open = true;
                     checkPortIsOpenState.icon = "fa fa-check-circle";
@@ -205,11 +206,20 @@ export default class Network extends React.Component {
                     this.setState({checkPortIsOpen : checkPortIsOpenState});
                 }else{
                     checkPortIsOpenState.open = false;
+                    checkPortIsOpenState.showLoader = false;
+                    checkPortIsOpenState.disableButton = false;
                     checkPortIsOpenState.icon = "fa fa-check-circle";
                     this.setState({ checkPortIsOpen: checkPortIsOpenState });
                 }
             });
-            setTimeout(() => {socket.end(); console.log('closing connection')}, 60 * 1000);
+            setTimeout(() => {
+                socket.end();
+                checkPortIsOpenState.open = false;
+                checkPortIsOpenState.showLoader = false;
+                checkPortIsOpenState.disableButton = false;
+                this.setState({ checkPortIsOpen: checkPortIsOpenState });
+                console.log('closing connection')
+            }, 60 * 1000);
         }
     }
 

