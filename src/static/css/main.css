@@ -140,6 +140,63 @@ body {
     background-color: rgba(33, 33, 33, .7);
 }
 
+#app .body .vic-box .status {
+    display: block;
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    top: 5%;
+    left: 15px;
+    z-index: 2;
+    user-select: none;
+    border-radius: 50%;
+}
+
+#app .body .vic-box .status.online {
+    background-color: var(--green-darken);
+}
+
+#app .body .vic-box .status.offline{
+    background-color: var(--red-darken);
+}
+
+#app .body .vic-box .content .info{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+#app .body .vic-box .content .info .col{
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    flex-direction: row;
+    align-content: stretch;
+    padding-left: 5%;
+}
+
+#app .body .vic-box .content .info .col.name{
+    justify-content: center;
+}
+
+#app .body .vic-box .content .info .col div{
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    width:50%;
+}
+
+#app .body .vic-box .content .info .col div > i{
+    width: 5%;
+}
+
+#app .body .vic-box .content .info .col div > span{
+    flex-grow: 4;
+}
+
 #app .body .vic-box .screen-preview {
     position: absolute;
     width: 100%;

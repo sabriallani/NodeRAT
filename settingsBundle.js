@@ -46407,6 +46407,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(0);
@@ -46440,6 +46442,11 @@ var General = function (_React$Component) {
             dialog: {
                 open: false,
                 message: null
+            },
+            showVictimsStatus: {
+                label: "Show Offline Victims",
+                status: null,
+                loading: true
             }
         };
 
@@ -46466,6 +46473,7 @@ var General = function (_React$Component) {
 
             }
         };
+        _this.getShowVictimStatus();
         return _this;
     }
 
@@ -46475,7 +46483,7 @@ var General = function (_React$Component) {
             var _this2 = this;
 
             // hi future me this is a mind fuck
-            // it's 3:05 am that writing this so GOOD LUCK figuring this line of code.
+            // it's 3:05 and i'm writing this so GOOD LUCK for figuring this line of code.
             ipcRenderer.once("core-store-on-appStartup_UPDATE", function (event, appStartup_status) {
                 ipcRenderer.send("core-store-l", "getVar", ["appStartup"], "appStartup");
                 ipcRenderer.once("core-store-r#appStartup", function (e, r) {
@@ -46511,6 +46519,61 @@ var General = function (_React$Component) {
             });
         }
     }, {
+        key: "setOfflineVictims",
+        value: function setOfflineVictims(e, toggled) {
+            var _this3 = this;
+
+            // to show loading ASAP;
+            var showVictimsStatusState = this.state.showVictimsStatus;
+            showVictimsStatusState.loading = true;
+            this.setState({ showVictimsStatus: showVictimsStatusState });
+
+            var cl = function cl(event, config) {
+                console.log("config:", config);
+
+                var _config = _slicedToArray(config, 2),
+                    err = _config[0],
+                    response = _config[1];
+
+                if (typeof response != "boolean") showVictimsStatusState.label = "something went wrong restart the app";
+
+                showVictimsStatusState.status = response;
+                showVictimsStatusState.loading = false;
+                _this3.setState({ showVictimsStatus: showVictimsStatusState });
+                // ipcRenderer.removeListener("core-store-customEvent-on-setConfigSettings@response", cl); // remove event listener
+            };
+
+            ipcRenderer.once("core-store-customEvent-on-setConfigSettings@response", cl);
+            ipcRenderer.send("core-store-customEvent-on", "setConfigSettings@response");
+            ipcRenderer.send("core-store-l", "customEvent", ["setConfigSettings", { name: "hideOfflineSlaves", value: toggled }]);
+        }
+    }, {
+        key: "getShowVictimStatus",
+        value: function getShowVictimStatus() {
+            var _this4 = this;
+
+            var cl = function cl(e, response) {
+                console.log("Constants:", response);
+                if (response.hasOwnProperty("hideOfflineSlaves")) {
+                    var showVictimsStatusState = _this4.state.showVictimsStatus;
+                    showVictimsStatusState.status = response.hideOfflineSlaves;
+                    showVictimsStatusState.loading = false;
+
+                    _this4.setState({ showVictimsStatus: showVictimsStatusState });
+                } else {
+                    var c = confirm("NodeRAT incountered some problems while loading settings and it needs to restart");
+                    if (c) {
+                        ipcRenderer.send("core-store-l", "customEvent", ["RestartApplication"]);
+                    } else {
+                        alert("NodeRAT will not run properly, please restart the application");
+                    }
+                }
+                ipcRenderer.removeListener("envVarResponse", cl);
+            };
+            ipcRenderer.on("envVarResponse", cl);
+            ipcRenderer.send("getEnvVars", "ServerConstants");
+        }
+    }, {
         key: "handleDialogClose",
         value: function handleDialogClose() {
             this.setState({
@@ -46523,17 +46586,41 @@ var General = function (_React$Component) {
     }, {
         key: "componentDidMount",
         value: function componentDidMount() {
-            this.getStartup();
+            // this.getStartup();
+            this.getShowVictimStatus();
         }
     }, {
         key: "render",
         value: function render() {
-            var _this3 = this;
+            var _this5 = this;
 
             var dialogActions = [_react2.default.createElement(_materialUi.RaisedButton, { onClick: this.handleDialogClose.bind(this), label: "Close" })];
             return _react2.default.createElement(
                 "div",
                 { className: "settings container" },
+                _react2.default.createElement(
+                    _materialUi.Paper,
+                    { style: this.style.paper, zDepth: 4 },
+                    _react2.default.createElement(
+                        "div",
+                        null,
+                        "View"
+                    ),
+                    _react2.default.createElement("br", null),
+                    _react2.default.createElement(_materialUi.Divider, null),
+                    _react2.default.createElement("br", null),
+                    _react2.default.createElement(
+                        "div",
+                        null,
+                        _react2.default.createElement(_materialUi.Toggle, {
+                            label: this.state.showVictimsStatus.label + (this.state.showVictimsStatus.loading == true ? " (Loading Settings)" : ""),
+                            disabled: this.state.showVictimsStatus.status == null ? true : false,
+                            toggled: this.state.showVictimsStatus.status,
+                            onToggle: this.setOfflineVictims.bind(this)
+                        })
+                    )
+                ),
+                _react2.default.createElement(_materialUi.Divider, null),
                 _react2.default.createElement(
                     _materialUi.Paper,
                     { style: this.style.paper, zDepth: 4 },
@@ -46597,7 +46684,7 @@ var General = function (_React$Component) {
                             _react2.default.createElement(
                                 "a",
                                 { href: "#", onClick: function onClick(e) {
-                                        return openLink("" + _this3.app.url);
+                                        return openLink("" + _this5.app.url);
                                     } },
                                 " Github"
                             )
@@ -46609,7 +46696,7 @@ var General = function (_React$Component) {
                             _react2.default.createElement(
                                 "a",
                                 { href: "#", onClick: function onClick(e) {
-                                        return openLink(_this3.app.url + "/issues");
+                                        return openLink(_this5.app.url + "/issues");
                                     } },
                                 " Github"
                             )

@@ -1,4 +1,5 @@
 const {ipcMain} = require("electron");
+const Color = require("colors");
 
 
 module.exports =  class ipcListeners{
@@ -50,8 +51,23 @@ module.exports =  class ipcListeners{
             console.log("core-store-on: listen", actionName);
             coreStore.on(actionName, () =>{
                 let name = actionName.split("@")[0];
+                
                 console.log("core-store-on: fire", actionName, name);
                 event.sender.send(`core-store-on-${actionName}`, coreStore.getVar(name));
+            });
+        });
+
+        // @actionName => event name to listen to: string
+        ipcMain.on("core-store-customEvent-on", (event, actionName) => {
+            console.log(`core-store-customEvent-on: listen - ${actionName}`.blue );
+            coreStore.on(actionName, (arg) =>{
+                
+                console.log(`core-store-customEvent-on: fire - core-store-customEvent-on${actionName}`.red, arg);
+                try {
+                    event.sender.send(`core-store-customEvent-on-${actionName}`, arg);
+                } catch (error) {
+                    console.log("Exception Error => core-store-customevent-on:".red, event);
+                }
             });
         });
 

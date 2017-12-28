@@ -64,6 +64,23 @@ class NodeRAT{
         CoreStore.on("RestartApplication", () => {
             this.appRestart();
         });
+
+        CoreStore.on("setConfigSettings", (arg) => {
+            Settings.onLoad(() => {
+                    console.log("set", arg);
+                    if (typeof arg != "object") {
+                        throw new Error("setConfig argument must be object type at index");
+                        return;
+                    } else if (typeof arg == "object" && arg.hasOwnProperty("name") == false || arg.hasOwnProperty("value") == false) {
+                        throw new Error("arguments for setConfig must have arg.name and arg.value");
+                    }
+
+                    let [stat, res] = Server.setConfig(arg.name, arg.value);
+                    CoreStore.customEvent("setConfigSettings@response", [stat, res]);
+                CoreStore.customEvent("ApplicationNeedsRestart", "Server Settings updated");
+                });
+            Settings.reload();
+            });
     }
 
     createLoaderWindow(){
@@ -129,7 +146,7 @@ class NodeRAT{
                 this.setMenuItems();
             }, 2000);
         });
-        this.StartIpcListeners()
+        this.StartIpc()
     }
 
     settingsWindow(menuitem, window, event) {
@@ -236,7 +253,7 @@ class NodeRAT{
             });
     }
 
-    StartIpcListeners(){
+    StartIpc(){
         let {ServerStore, ServerAction, ServerConstants} = Server.export({
             Constants : "ServerConstants",
             Action    : "ServerAction",
@@ -250,11 +267,13 @@ class NodeRAT{
     }
 
     appRestart(){
+        Server.stop();
         app.relaunch();
         app.quit();
     }
 
     appWillQuit(e){
+        Server.stop();
         this.tray.destroy();
     }
 

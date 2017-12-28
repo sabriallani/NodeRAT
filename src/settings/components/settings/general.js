@@ -13,6 +13,11 @@ export default class General extends React.Component{
             dialog:{
                 open : false,
                 message: null
+            },
+            showVictimsStatus : {
+                label : "Show Offline Victims",
+                status : null,
+                loading : true
             }
         }
 
@@ -39,11 +44,13 @@ export default class General extends React.Component{
 
             }
         }
+        this.getShowVictimStatus();
     }
+
 
     getStartup(){
         // hi future me this is a mind fuck
-        // it's 3:05 am that writing this so GOOD LUCK figuring this line of code.
+        // it's 3:05 and i'm writing this so GOOD LUCK for figuring this line of code.
         ipcRenderer.once("core-store-on-appStartup_UPDATE", (event, appStartup_status) => {
             ipcRenderer.send("core-store-l", "getVar", ["appStartup"], "appStartup"); 
             ipcRenderer.once("core-store-r#appStartup", (e, r)=>{
@@ -77,6 +84,52 @@ export default class General extends React.Component{
         })
     }
 
+    setOfflineVictims(e, toggled){
+        // to show loading ASAP;
+        let showVictimsStatusState = this.state.showVictimsStatus;
+        showVictimsStatusState.loading = true;
+        this.setState({ showVictimsStatus: showVictimsStatusState });
+
+        let cl = (event, config)  => {
+            console.log("config:", config);
+            let [err, response] = config;
+            if (typeof response != "boolean")
+                showVictimsStatusState.label = "something went wrong restart the app";
+
+            showVictimsStatusState.status = response;
+            showVictimsStatusState.loading = false;
+            this.setState({ showVictimsStatus: showVictimsStatusState });
+            // ipcRenderer.removeListener("core-store-customEvent-on-setConfigSettings@response", cl); // remove event listener
+        }
+
+        ipcRenderer.once("core-store-customEvent-on-setConfigSettings@response", cl);
+        ipcRenderer.send("core-store-customEvent-on", "setConfigSettings@response");
+        ipcRenderer.send("core-store-l", "customEvent", ["setConfigSettings", { name: "hideOfflineSlaves", value: toggled }]);
+    }
+
+    getShowVictimStatus(){
+        let cl = (e, response) => {
+            console.log("Constants:", response);
+            if (response.hasOwnProperty("hideOfflineSlaves")) {
+                let showVictimsStatusState = this.state.showVictimsStatus;
+                showVictimsStatusState.status = response.hideOfflineSlaves;
+                showVictimsStatusState.loading = false;
+
+                this.setState({ showVictimsStatus: showVictimsStatusState });
+            } else {
+                let c = confirm("NodeRAT incountered some problems while loading settings and it needs to restart");
+                if (c) {
+                    ipcRenderer.send("core-store-l", "customEvent", ["RestartApplication"]);
+                } else {
+                    alert("NodeRAT will not run properly, please restart the application");
+                }
+            }
+            ipcRenderer.removeListener("envVarResponse", cl);
+        }
+        ipcRenderer.on("envVarResponse", cl);
+        ipcRenderer.send("getEnvVars", "ServerConstants");
+    }
+
     handleDialogClose(){
         this.setState({
             dialog : {
@@ -87,7 +140,8 @@ export default class General extends React.Component{
     }
 
     componentDidMount() {
-        this.getStartup();
+        // this.getStartup();
+        this.getShowVictimStatus();
     }
 
     render(){
@@ -106,7 +160,29 @@ export default class General extends React.Component{
                 </Paper>
 
                 <Divider /> */}
-                {/*TODO: available in future it's not working correctly for now */}
+                {/*TODO: available in future it's might not work correctly for now.
+                         it needs to be tested on windowns and linux.*/}
+
+                <Paper style={this.style.paper} zDepth={4}>
+                    <div>
+                        View
+                    </div>
+                    <br />
+                    <Divider/>
+                    <br />
+
+                    <div>
+                        <Toggle
+                            label={this.state.showVictimsStatus.label + (this.state.showVictimsStatus.loading == true ? " (Loading Settings)" : "")}
+                            disabled={this.state.showVictimsStatus.status == null ? true : false}
+                            toggled={this.state.showVictimsStatus.status}
+                            onToggle={this.setOfflineVictims.bind(this)}
+                        />
+                    </div>
+
+                </Paper>
+
+                <Divider />
 
                 <Paper style={this.style.paper} zDepth={4}>
                     <div>
@@ -125,7 +201,7 @@ export default class General extends React.Component{
                             {this.app.author}
                         </Chip> with a lot of
                         <IconButton disableTouchRipple={true} iconStyle={{ color: red500 }} iconClassName="fa fa-code" tooltipPosition="top-center" tooltip="Code" />
-                        <IconButton disableTouchRipple={true} iconStyle={{ color: red500 }} iconClassName="fa fa-coffee" tooltipPosition="top-center" tooltip="Coffee" />
+                        <IconButton disableTouchRipple={true} iconStyle={{ color: red500 }} iconClassName="fa fa-coffee" tooltipPosition="top-center" tooltip="Tea" />
                         <IconButton disableTouchRipple={true} iconStyle={{ color: red500 }} iconClassName="fa fa-heart" tooltipPosition="top-center" tooltip="Love" />
                     </div>
                 </Paper>
@@ -167,4 +243,5 @@ export default class General extends React.Component{
             </div>
         );
     }
+
 }

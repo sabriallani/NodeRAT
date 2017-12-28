@@ -39,7 +39,7 @@ class NodeCoreStore extends EventEmitter{
 
     customEvent(eventName, msg){
         this.emit(eventName, msg);
-        console.log("event" ,eventName);
+        console.log("event" ,eventName, msg);
     }
 
     handleAction(action){

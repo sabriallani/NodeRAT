@@ -1,4 +1,32 @@
+#PyRAT TODOs
+
+
+
+
+
+======================================================
+
+#NodeRAT TODOs
+
+
+[ improvment ]
+
 -make the settings window nav tab fixed when scrolling
+-add settings change to Settings window so the `Config.json` settings can be viewd/changed
 
--fix[server/settings@set] properly save objects to config.json
 
+[ future ]
+
+
+
+
+[ nice thing ]
+
+    -when server store is updating or on any event show a nice bar loader under NodeRAT logo
+        | LOGO |
+         -----   <- loader
+
+
+
+[ rewrite ]
+    ipclisteners.js (rewrite this in better way to improve app performance)

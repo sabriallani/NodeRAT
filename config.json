@@ -1,6 +1,1 @@
-{
-    "network.port.tcp.default": 1528,
-    "network.port.tcp.use"    : 1528,
-    "allowDuplicatedIPs"      : true,
-    "hideOfflineSlaves"       : true
-}
+{"network.port.tcp.default":1528,"network.port.tcp.use":1528,"allowDuplicatedIPs":true,"hideOfflineSlaves":false}
