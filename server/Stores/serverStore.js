@@ -8,16 +8,33 @@ class ServerStore extends EventEmitter {
         this.vars = {};
     }
 
-    get(variable) {
-        return this.vars[variable] && typeof this.vars[variable] != "function" ? this.vars[variable] : null;
+    get(variable, cb = null) {
+        if (cb) {
+            if(typeof cb == "function"){
+                cb( this.vars[variable] && typeof this.vars[variable] != "function" ? this.vars[variable] : null );
+            }
+        } else {
+            return this.vars[variable] && typeof this.vars[variable] != "function" ? this.vars[variable] : null;
+        }
     }
 
-    getType(variable) {
-        return typeof this.vars[variable];
+    getType(variable, cb = null) {
+        if (cb) {
+            if (typeof cb == "function")
+                cb(typeof this.vars[variable]);
+        } else {
+            return typeof this.vars[variable];
+        }
     }
 
-    getAll() {
-        return this.vars;
+    getAll(cb = null) {
+        if (cb) {
+            if (typeof cb == "function")
+                cb(this.vars);
+        } else {
+            return this.vars;
+        }
+        
     }
 
     update(variable, payload) {

@@ -24,12 +24,16 @@ export default class Body extends React.Component{
     }
 
     getVictims(){
-        ipcRenderer.on("envVarResponse", (e, serverConstant) => {
+        ipcRenderer.once("invokedStoreMethod:ServerStore-get-#constants", (e, serverConstant) => {
+
             let ServerConstants = this.state.ServerConstants;
             ServerConstants = serverConstant;
-            // update state so we can use it in this.ServerStore bellow
+            
+            // update state so we can use it bellow
             this.setState({ServerConstants});
+
             let cl = (e, slaves) => {
+
                 console.log("slaves:", slaves, "Constants:", ServerConstants);
                 let ConnectedGuests = this.state.ConnectedGuests;
                 ConnectedGuests = slaves;
@@ -40,108 +44,43 @@ export default class Body extends React.Component{
                 this.setState({ConnectedGuests, RenderGuests});
 
             }
+            
             // intial data pull
-            this.ServerStore({
+            ipcRenderer.once("invokedStoreMethod:ServerStore-get-#GetConnected", cl);
+            ipcRenderer.send("Stores:method",{
+                store : "ServerStore",
                 method: "get",
-                params: [this.state.ServerConstants.connectedVictims],
-                id: "GetConnected",
-                callback: cl
+                methodParams: [this.state.ServerConstants.connectedVictims],
+                id: "GetConnected" 
             });
+            
             // data monitor 
-            this.ServerStore({
-                on : true,
-                name: { variable: this.state.ServerConstants.connectedVictims, status : "UPDATED"},
-                id: "monitor",
-                callback: cl
+
+            ipcRenderer.on(`invokedEvent:${this.state.ServerConstants.connectedVictims}@UPDATED`, cl);
+            ipcRenderer.send("Stores" ,{
+                store : "ServerStore",
+                type : "on",
+                eventName: `${this.state.ServerConstants.connectedVictims}@UPDATED`,
+                id: "monitor"
             });
+
             // Server Constants monitor
-            this.ServerStore({
-                on: true,
-                name: { variable: "Constants", status: "UPDATED" },
-                id: "monitor",
-                callback: (e, con) => this.setState({ServerConstants : con})
+            ipcRenderer.on(`invokedEvent:Constants@UPDATED`, (e, con) => this.setState({ ServerConstants: con }) );
+            ipcRenderer.send("Stores", {
+                store: "ServerStore",
+                type: "on",
+                eventName: `Constants@UPDATED`,
             });
+
         });
-        ipcRenderer.send("getEnvVars", "ServerConstants");
+
+        ipcRenderer.send("Stores:method", {
+            store : "ServerStore",
+            method: "get",
+            methodParams : ["Constants"],
+            id : "constants"
+        });
         
-    }
-
-    ServerStore({method = null, params = [], on = null, name = null, callback = null, id = null}){
-        if(!callback){
-            throw new Error("Callback needed for ServerStore");
-            return;
-        }
-
-        let listener = on;
-        if(on != null)
-            if (typeof on == "object")
-                lisntener = on.hasOwnProperty("on") ? on.on : null;
-
-        if (listener == true && name) {
-            console.log("on event lisntener");
-            // event listener
-            let responseChannel = `ServerStoreResponse-on@${name}`;
-            if (id) {
-                if (typeof id == "string") {
-                    responseChannel = `ServerStore-on#${id}`;
-                } else if (typeof id == "object" && id.full == true) {
-                    responseChannel = id.id;
-                }
-            }
-            let cl = (e, r) => {
-                callback(e, r);
-
-                if(on.hasOwnProperty("once") && on.once == true) // one time listener
-                    ipcRenderer.removeListener(responseChannel, cl);
-            }
-            ipcRenderer.on(responseChannel, cl);
-            ipcRenderer.send("ServerStore-on", name, id);
-
-        } else if(method && params){
-            // regular method call
-            console.log("one time event");
-            let responseChannel = `ServerStoreResponse@${method}`;
-            if (id) {
-                if (typeof id == "string") {
-                    responseChannel = `ServerStore#${id}`;
-                } else if (typeof id == "object" && id.full == true) {
-                    responseChannel = id.id;
-                }
-            }
-            let cl = (e, r) => {
-                callback(e, r);
-                ipcRenderer.removeListener(responseChannel, cl);
-            }
-            ipcRenderer.on(responseChannel, cl);
-            ipcRenderer.send("ServerStore", method, params ,id);
-        }
-    }
-
-    ServerAction({method = null, params = [], id = null, callback = null}){
-        if(method && params){
-            if (!callback) {
-                throw new Error("Callback needed for ServerAction");
-                return;
-            }
-            let responseChannel = `ServerActionResponse@${method}`;
-            if (id) {
-                if (typeof id == "string") {
-                    responseChannel = `ServerAction#${id}`;
-                } else if (typeof id == "object" && id.full == true) {
-                    responseChannel = id.id;
-                }
-            }
-            let cl = (e, rse) => {
-                callback(res, e);
-                ipcRenderer.removeListener(responseChannel, cl);
-            }
-            ipcRenderer.on(responseChannel, cl );
-            ipcRenderer.send("ServerAction", method, params);
-        }else{
-            throw new Error("method name and parameter is expected in ServerAction");
-            return;
-        }
-
     }
 
     removeContext(e){
@@ -218,7 +157,16 @@ export default class Body extends React.Component{
                     pos={{ clientX: this.state.ContextMenu.clientX, clientY: this.state.ContextMenu.clientY }} 
                         srcElm={this.ContextElement} options={currentOption} /> : null}
 
-                {this.state.RenderGuests ? rend() : `<i style="fa fa-cog fa-spin fa-fw"></i> <span> Loading Configuration ... </span>` }
+                { 
+                    this.state.RenderGuests 
+                        ? 
+                        rend() 
+                        : 
+                        <div style={{fontSize : 1.1 + "em"}}>
+                            <i className="fa fa-cog fa-spin fa-fw"></i>
+                            <span> Loading Configuration ... </span>
+                        </div>
+                }
                     
             </div>
         )

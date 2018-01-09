@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, dialog} = require('electron');
-const ipcModule = require("./src/modules/ipcListeners");
+const ipcModule = require("./src/modules/ipc");
 const path = require('path');
 const url = require('url');
 const autoLaunch = require("auto-launch");
@@ -254,12 +254,25 @@ class NodeRAT{
     }
 
     StartIpc(){
-        let {ServerStore, ServerAction, ServerConstants} = Server.export({
-            Constants : "ServerConstants",
+        let {ServerStore, ServerAction} = Server.export({
             Action    : "ServerAction",
             Store     : "ServerStore"
         });
-       this._ipcModule = new ipcModule({ServerStore, ServerAction, ServerConstants}, CoreStore, CoreAction, this.Windows.mainWindow);
+
+       this._ipcModule = new ipcModule({
+           stores : {
+            CoreStore,
+            ServerStore
+           },
+           actions: {
+            CoreAction,
+            ServerAction
+           },
+           windows : {
+               mainWindow : this.Windows.mainWindow
+           }
+        });
+        
     }
 
     setOnTop(menuItem, browserWindow, event){

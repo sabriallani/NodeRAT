@@ -38204,8 +38204,6 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(0);
@@ -38260,12 +38258,16 @@ var Body = function (_React$Component) {
         value: function getVictims() {
             var _this2 = this;
 
-            ipcRenderer.on("envVarResponse", function (e, serverConstant) {
+            ipcRenderer.once("invokedStoreMethod:ServerStore-get-#constants", function (e, serverConstant) {
+
                 var ServerConstants = _this2.state.ServerConstants;
                 ServerConstants = serverConstant;
-                // update state so we can use it in this.ServerStore bellow
+
+                // update state so we can use it bellow
                 _this2.setState({ ServerConstants: ServerConstants });
+
                 var cl = function cl(e, slaves) {
+
                     console.log("slaves:", slaves, "Constants:", ServerConstants);
                     var ConnectedGuests = _this2.state.ConnectedGuests;
                     ConnectedGuests = slaves;
@@ -38274,129 +38276,43 @@ var Body = function (_React$Component) {
 
                     _this2.setState({ ConnectedGuests: ConnectedGuests, RenderGuests: RenderGuests });
                 };
+
                 // intial data pull
-                _this2.ServerStore({
+                ipcRenderer.once("invokedStoreMethod:ServerStore-get-#GetConnected", cl);
+                ipcRenderer.send("Stores:method", {
+                    store: "ServerStore",
                     method: "get",
-                    params: [_this2.state.ServerConstants.connectedVictims],
-                    id: "GetConnected",
-                    callback: cl
+                    methodParams: [_this2.state.ServerConstants.connectedVictims],
+                    id: "GetConnected"
                 });
+
                 // data monitor 
-                _this2.ServerStore({
-                    on: true,
-                    name: { variable: _this2.state.ServerConstants.connectedVictims, status: "UPDATED" },
-                    id: "monitor",
-                    callback: cl
+
+                ipcRenderer.on("invokedEvent:" + _this2.state.ServerConstants.connectedVictims + "@UPDATED", cl);
+                ipcRenderer.send("Stores", {
+                    store: "ServerStore",
+                    type: "on",
+                    eventName: _this2.state.ServerConstants.connectedVictims + "@UPDATED",
+                    id: "monitor"
                 });
+
                 // Server Constants monitor
-                _this2.ServerStore({
-                    on: true,
-                    name: { variable: "Constants", status: "UPDATED" },
-                    id: "monitor",
-                    callback: function callback(e, con) {
-                        return _this2.setState({ ServerConstants: con });
-                    }
+                ipcRenderer.on("invokedEvent:Constants@UPDATED", function (e, con) {
+                    return _this2.setState({ ServerConstants: con });
+                });
+                ipcRenderer.send("Stores", {
+                    store: "ServerStore",
+                    type: "on",
+                    eventName: "Constants@UPDATED"
                 });
             });
-            ipcRenderer.send("getEnvVars", "ServerConstants");
-        }
-    }, {
-        key: "ServerStore",
-        value: function ServerStore(_ref) {
-            var _ref$method = _ref.method,
-                method = _ref$method === undefined ? null : _ref$method,
-                _ref$params = _ref.params,
-                params = _ref$params === undefined ? [] : _ref$params,
-                _ref$on = _ref.on,
-                on = _ref$on === undefined ? null : _ref$on,
-                _ref$name = _ref.name,
-                name = _ref$name === undefined ? null : _ref$name,
-                _ref$callback = _ref.callback,
-                callback = _ref$callback === undefined ? null : _ref$callback,
-                _ref$id = _ref.id,
-                id = _ref$id === undefined ? null : _ref$id;
 
-            if (!callback) {
-                throw new Error("Callback needed for ServerStore");
-                return;
-            }
-
-            var listener = on;
-            if (on != null) if ((typeof on === "undefined" ? "undefined" : _typeof(on)) == "object") lisntener = on.hasOwnProperty("on") ? on.on : null;
-
-            if (listener == true && name) {
-                console.log("on event lisntener");
-                // event listener
-                var responseChannel = "ServerStoreResponse-on@" + name;
-                if (id) {
-                    if (typeof id == "string") {
-                        responseChannel = "ServerStore-on#" + id;
-                    } else if ((typeof id === "undefined" ? "undefined" : _typeof(id)) == "object" && id.full == true) {
-                        responseChannel = id.id;
-                    }
-                }
-                var cl = function cl(e, r) {
-                    callback(e, r);
-
-                    if (on.hasOwnProperty("once") && on.once == true) // one time listener
-                        ipcRenderer.removeListener(responseChannel, cl);
-                };
-                ipcRenderer.on(responseChannel, cl);
-                ipcRenderer.send("ServerStore-on", name, id);
-            } else if (method && params) {
-                // regular method call
-                console.log("one time event");
-                var _responseChannel = "ServerStoreResponse@" + method;
-                if (id) {
-                    if (typeof id == "string") {
-                        _responseChannel = "ServerStore#" + id;
-                    } else if ((typeof id === "undefined" ? "undefined" : _typeof(id)) == "object" && id.full == true) {
-                        _responseChannel = id.id;
-                    }
-                }
-                var _cl = function _cl(e, r) {
-                    callback(e, r);
-                    ipcRenderer.removeListener(_responseChannel, _cl);
-                };
-                ipcRenderer.on(_responseChannel, _cl);
-                ipcRenderer.send("ServerStore", method, params, id);
-            }
-        }
-    }, {
-        key: "ServerAction",
-        value: function ServerAction(_ref2) {
-            var _ref2$method = _ref2.method,
-                method = _ref2$method === undefined ? null : _ref2$method,
-                _ref2$params = _ref2.params,
-                params = _ref2$params === undefined ? [] : _ref2$params,
-                _ref2$id = _ref2.id,
-                id = _ref2$id === undefined ? null : _ref2$id,
-                _ref2$callback = _ref2.callback,
-                callback = _ref2$callback === undefined ? null : _ref2$callback;
-
-            if (method && params) {
-                if (!callback) {
-                    throw new Error("Callback needed for ServerAction");
-                    return;
-                }
-                var responseChannel = "ServerActionResponse@" + method;
-                if (id) {
-                    if (typeof id == "string") {
-                        responseChannel = "ServerAction#" + id;
-                    } else if ((typeof id === "undefined" ? "undefined" : _typeof(id)) == "object" && id.full == true) {
-                        responseChannel = id.id;
-                    }
-                }
-                var cl = function cl(e, rse) {
-                    callback(res, e);
-                    ipcRenderer.removeListener(responseChannel, cl);
-                };
-                ipcRenderer.on(responseChannel, cl);
-                ipcRenderer.send("ServerAction", method, params);
-            } else {
-                throw new Error("method name and parameter is expected in ServerAction");
-                return;
-            }
+            ipcRenderer.send("Stores:method", {
+                store: "ServerStore",
+                method: "get",
+                methodParams: ["Constants"],
+                id: "constants"
+            });
         }
     }, {
         key: "removeContext",
@@ -38488,7 +38404,16 @@ var Body = function (_React$Component) {
                 this.state.ContextMenu.renderContext ? _react2.default.createElement(_contextmenu2.default, {
                     pos: { clientX: this.state.ContextMenu.clientX, clientY: this.state.ContextMenu.clientY },
                     srcElm: this.ContextElement, options: currentOption }) : null,
-                this.state.RenderGuests ? rend() : "<i style=\"fa fa-cog fa-spin fa-fw\"></i> <span> Loading Configuration ... </span>"
+                this.state.RenderGuests ? rend() : _react2.default.createElement(
+                    "div",
+                    { style: { fontSize: 1.1 + "em" } },
+                    _react2.default.createElement("i", { className: "fa fa-cog fa-spin fa-fw" }),
+                    _react2.default.createElement(
+                        "span",
+                        null,
+                        " Loading Configuration ... "
+                    )
+                )
             );
         }
     }]);

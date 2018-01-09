@@ -239,6 +239,9 @@ class Server extends EventEmitter{
     setConfig(name = "", status = null){
         if(status != null && name != ""){
             let [stat, config] = Settings.set({obj: name, value: status});
+            let constant = Store.get("constants");
+            constant[name] = config;
+            Action.update("constants",  constant);
             return [stat, config];
         }
     }

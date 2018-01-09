@@ -1,4 +1,5 @@
 import React from "react";
+import * as ServerConstants from "./general/serverConstants";
 import { Divider, Toggle, Paper , Chip, IconButton, Dialog, RaisedButton} from "material-ui";
 import { blueGrey100, deepOrange200, red500, grey800, deepOrange300, green50} from "material-ui/styles/colors";
 
@@ -44,90 +45,7 @@ export default class General extends React.Component{
 
             }
         }
-        this.getShowVictimStatus();
-    }
-
-
-    getStartup(){
-        // hi future me this is a mind fuck
-        // it's 3:05 and i'm writing this so GOOD LUCK for figuring this line of code.
-        ipcRenderer.once("core-store-on-appStartup_UPDATE", (event, appStartup_status) => {
-            ipcRenderer.send("core-store-l", "getVar", ["appStartup"], "appStartup"); 
-            ipcRenderer.once("core-store-r#appStartup", (e, r)=>{
-                this.setState({
-                    runOnStartUp: r
-                });
-            });
-        })
-        ipcRenderer.send("core-store-on", "appStartup_UPDATE");
-
-        ipcRenderer.once("core-store-r#appStartup2", (e, r) => {
-            this.setState({
-                runOnStartUp: r
-            })
-        });
-        ipcRenderer.send("core-store-l", "getVar", ["appStartup"], "appStartup2");
-    }
-
-    sendStartup(state){
-        ipcRenderer.send("core-action-l", "updateVar", ["appStartup", state], "appStartup");
-        ipcRenderer.once("core-action-r#appStartup", this.getStartup.bind(this));
-    }
-
-    setStartUp(event, toggled){
-        this.sendStartup(toggled);
-        this.setState({
-            dialog : {
-                message: `NodeRAT will ${toggled ? "" : " not "} run on next startup`,
-                open : true
-            }
-        })
-    }
-
-    setOfflineVictims(e, toggled){
-        // to show loading ASAP;
-        let showVictimsStatusState = this.state.showVictimsStatus;
-        showVictimsStatusState.loading = true;
-        this.setState({ showVictimsStatus: showVictimsStatusState });
-
-        let cl = (event, config)  => {
-            console.log("config:", config);
-            let [err, response] = config;
-            if (typeof response != "boolean")
-                showVictimsStatusState.label = "something went wrong restart the app";
-
-            showVictimsStatusState.status = response;
-            showVictimsStatusState.loading = false;
-            this.setState({ showVictimsStatus: showVictimsStatusState });
-            // ipcRenderer.removeListener("core-store-customEvent-on-setConfigSettings@response", cl); // remove event listener
-        }
-
-        ipcRenderer.once("core-store-customEvent-on-setConfigSettings@response", cl);
-        ipcRenderer.send("core-store-customEvent-on", "setConfigSettings@response");
-        ipcRenderer.send("core-store-l", "customEvent", ["setConfigSettings", { name: "hideOfflineSlaves", value: toggled }]);
-    }
-
-    getShowVictimStatus(){
-        let cl = (e, response) => {
-            console.log("Constants:", response);
-            if (response.hasOwnProperty("hideOfflineSlaves")) {
-                let showVictimsStatusState = this.state.showVictimsStatus;
-                showVictimsStatusState.status = response.hideOfflineSlaves;
-                showVictimsStatusState.loading = false;
-
-                this.setState({ showVictimsStatus: showVictimsStatusState });
-            } else {
-                let c = confirm("NodeRAT incountered some problems while loading settings and it needs to restart");
-                if (c) {
-                    ipcRenderer.send("core-store-l", "customEvent", ["RestartApplication"]);
-                } else {
-                    alert("NodeRAT will not run properly, please restart the application");
-                }
-            }
-            ipcRenderer.removeListener("envVarResponse", cl);
-        }
-        ipcRenderer.on("envVarResponse", cl);
-        ipcRenderer.send("getEnvVars", "ServerConstants");
+    
     }
 
     handleDialogClose(){
@@ -139,9 +57,72 @@ export default class General extends React.Component{
         });
     }
 
+    setOfflineVictimsProxy(e, s){
+
+        let showVictimsStatusState = this.state.showVictimsStatus;
+        showVictimsStatusState.loading = true;
+        this.setState({ showVictimsStatus: showVictimsStatusState });
+        
+       ServerConstants.setShowVictims(e,s)
+            .then((event, config) => {
+                console.log("config:", config);
+                let [err, response] = config;
+                if (typeof response != "boolean")
+                    showVictimsStatusState.label = "something went wrong, restart the app";
+
+                showVictimsStatusState.status = response;
+                showVictimsStatusState.loading = false;
+                this.setState({ showVictimsStatus: showVictimsStatusState });
+            })
+            .catch(console.log);
+
+    }
+
     componentDidMount() {
-        // this.getStartup();
-        this.getShowVictimStatus();
+        // show loader ASAP
+
+        let showVictimsStatusState = this.state.showVictimsStatus;
+        showVictimsStatusState.loading = true;
+        this.setState({ showVictimsStatus: showVictimsStatusState });
+
+        ServerConstants.getShowVictim()
+            .then((response, e) => {
+                console.log("Constants:", response, e);
+                if (response.hasOwnProperty("hideOfflineSlaves")) {
+                    showVictimsStatusState.status = response.hideOfflineSlaves;
+                    showVictimsStatusState.loading = false;
+
+                    this.setState({ showVictimsStatus: showVictimsStatusState });
+                } else {
+                    console.log("state:", this.state.showVictimsStatus, "constants", response);
+                    alert("could not find object property ('hideOfflineSlaves') in state memory");
+                }
+
+            })
+            .catch((err, e) => {
+                console.log("Constants:", err);
+                showVictimsStatusState.status = null;
+                showVictimsStatusState.loading = false;
+                showVictimsStatusState.label = "Error: something went wrong :(";
+
+                this.setState({ showVictimsStatus: showVictimsStatusState });
+
+                let c = confirm("NodeRAT encountered some problems while loading settings and it needs to restart");
+                if (c) {
+
+                    ipcRenderer.send("Stores:method", {
+                        store: "CoreStore",
+                        method: "customEvent",
+                        methodParams: ["RestartApplication"]
+                    });
+
+                } else {
+                    alert(`NodeRAT will not run properly, please restart the application. \n
+                    \ryou will encounter slow pc performance or memory leak,\n\ranyways just restart the app.`);
+                }
+
+            });
+
     }
 
     render(){
@@ -176,7 +157,7 @@ export default class General extends React.Component{
                             label={this.state.showVictimsStatus.label + (this.state.showVictimsStatus.loading == true ? " (Loading Settings)" : "")}
                             disabled={this.state.showVictimsStatus.status == null ? true : false}
                             toggled={this.state.showVictimsStatus.status}
-                            onToggle={this.setOfflineVictims.bind(this)}
+                            onToggle={this.setOfflineVictimsProxy.bind(this)}
                         />
                     </div>
 
