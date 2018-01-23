@@ -6,6 +6,7 @@
   "main": "app/index.js",
   "scripts": {
     "webpack": "webpack",
+    "lint": "eslint",
     "app": "./node_modules/.bin/electron .",
     "start": "npm run webpack && npm run app",
     "build": "npm run webpack"
@@ -21,9 +22,9 @@
     "babel-preset-stage-1": "^6.24.1",
     "colors": "^1.1.2",
     "concurrently": "^3.5.0",
-    "electron": "^1.7.8",
+    "electron": "^1.8.1",
+    "eslint": "^4.15.0",
     "eslint-config-airbnb": "^16.1.0",
-    "eslint-config-google": "^0.9.1",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-jsx-a11y": "^6.0.3",
     "eslint-plugin-react": "^7.5.1",
